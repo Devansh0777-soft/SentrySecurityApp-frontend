@@ -748,6 +748,8 @@ const en = {
         close: 'Close',
         featureSoon: 'This guard feature will be available soon.',
         tryAgain: 'Please try again.',
+        networkError:
+          'Unable to connect to the server. Please check your connection and try again.',
       },
       duty: {
         scheduleNotSet: 'Schedule not set',
@@ -824,6 +826,12 @@ const en = {
           'Your clock-in photo is saved and the duty timer is running.',
         dutyEnded: 'Duty ended',
         dutyEndedBody: 'Your clock-out photo is saved to today’s duty log.',
+        dutyCycleTitle: 'Duty unavailable',
+        dutyCycleWait:
+          'You have already completed your duty cycle. You can start your next duty at {{time}}.',
+        dutyCycleNoTime:
+          'You have already completed your duty cycle. Please try again later.',
+        nextDutyHint: 'Next duty available at {{time}}',
       },
       schedule: {
         thisWeek: 'THIS WEEK',
@@ -855,6 +863,7 @@ const en = {
         notVisited: 'Assigned checkpoint',
         progress: 'PATROL PROGRESS',
         completedCount: '{{scanned}}/{{total}} completed',
+        startDutyHint: 'Start your duty to complete checkpoints.',
         nextCheckpoint: 'NEXT CHECKPOINT',
         nextCheckpointHint: 'Next checkpoint in your route',
         recentScans: 'RECENT SCANS',

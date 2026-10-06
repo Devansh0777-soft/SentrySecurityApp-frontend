@@ -27,14 +27,28 @@ export async function apiRequest<T>(
   const { method = 'GET', body, authenticated = false } = options;
   const token = authenticated ? await session.getToken() : null;
   const isFormData = body instanceof FormData;
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...(body ? { body: isFormData ? body : JSON.stringify(body) } : {}),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers: {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      ...(body ? { body: isFormData ? body : JSON.stringify(body) } : {}),
+    });
+  } catch {
+    // React Native rejects with a bare TypeError ("Network request failed") for
+    // any transport-level failure — the request may or may not have been
+    // processed by the server. Normalise it into an ApiError with a stable
+    // code so screens can show one meaningful message (and reconcile state
+    // with a read-only status call before reporting failure).
+    throw new ApiError(
+      'Unable to connect to the server. Please check your connection and try again.',
+      undefined,
+      'NETWORK_ERROR',
+    );
+  }
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {

@@ -97,6 +97,11 @@ const GuardDutyScreen = () => {
   const isOnDuty = duty?.status === 'on_duty';
   const activeLog = duty?.active_log ?? null;
   const timer = useDutyTimer(activeLog?.clock_in_at);
+  // Backend-authoritative 24-hour cycle state (display-only UX guard; the
+  // backend re-validates every clock-in/out).
+  const canStart = duty ? (duty.can_start ?? duty.status === 'off_duty') : false;
+  const nextDutyAt = duty?.next_start_at ?? null;
+  const coolingDown = !isOnDuty && !canStart;
   const notSetLabel = t('guard.duty.scheduleNotSet');
   const assignmentText = useMemo(() => {
     if (!guard?.site_name) return t('guard.duty.noActiveSite');
@@ -117,6 +122,17 @@ const GuardDutyScreen = () => {
       Alert.alert(
         t('guard.duty.noActiveSite'),
         t('guard.duty.noActiveSiteHint'),
+      );
+      return;
+    }
+    if (!canStart) {
+      // 24-hour duty cycle: explain why, using the backend-computed next
+      // allowed start time (never a hardcoded reset time).
+      Alert.alert(
+        t('guard.duty.dutyCycleTitle'),
+        nextDutyAt
+          ? t('guard.duty.dutyCycleWait', { time: formatClock(nextDutyAt) })
+          : t('guard.duty.dutyCycleNoTime'),
       );
       return;
     }
@@ -227,12 +243,20 @@ const GuardDutyScreen = () => {
             <Text style={styles.dutyAction}>
               {isOnDuty
                 ? t('guard.duty.tapToClockOut')
-                : t('guard.duty.tapToClockIn')}
+                : coolingDown
+                  ? t('guard.duty.dutyCycleTitle')
+                  : t('guard.duty.tapToClockIn')}
             </Text>
             <Text style={styles.dutyHint}>
               {isOnDuty
                 ? t('guard.duty.clockOutPhotoNotice')
-                : t('guard.duty.clockInPhotoRequired')}
+                : coolingDown
+                  ? nextDutyAt
+                    ? t('guard.duty.nextDutyHint', {
+                        time: formatClock(nextDutyAt),
+                      })
+                    : t('guard.duty.dutyCycleNoTime')
+                  : t('guard.duty.clockInPhotoRequired')}
             </Text>
           </ScalePressable>
 

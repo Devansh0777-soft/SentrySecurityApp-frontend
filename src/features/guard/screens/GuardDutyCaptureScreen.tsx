@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -10,14 +10,22 @@ import { colors } from '../../../styles/colors';
 import { scaleFont } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { ApiError } from '../../../services/apiClient';
 import {
   guardService,
   type DutyPhoto,
+  type GuardDutyStatus,
 } from '../../../services/guardService';
 import GuardSelfieCapture from '../components/GuardSelfieCapture';
 import type { GuardStackParamList } from '../../../navigation/types';
 
 type Props = NativeStackScreenProps<GuardStackParamList, 'GuardDutyCapture'>;
+
+const formatLocalTime = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 const GuardDutyCaptureScreen = ({ navigation, route }: Props) => {
   const { t } = useTranslation();
@@ -26,6 +34,10 @@ const GuardDutyCaptureScreen = ({ navigation, route }: Props) => {
 
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  // React state updates are asynchronous, so a `busy` check alone cannot stop
+  // two taps landing in the same frame from firing two identical requests.
+  // A ref flips synchronously with the tap: one user action = one submission.
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (!done) return undefined;
@@ -34,21 +46,59 @@ const GuardDutyCaptureScreen = ({ navigation, route }: Props) => {
   }, [done, navigation]);
 
   const confirm = async (photo: DutyPhoto) => {
-    if (busy) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setBusy(true);
     try {
-      setBusy(true);
       await (isClockIn
         ? guardService.clockIn(photo)
         : guardService.clockOut(photo));
       setDone(true);
     } catch (error) {
+      // The transport can fail after the server already applied the change
+      // (lost response). Reconcile ONCE with the authoritative duty status —
+      // a read-only GET, never a retry of the mutation — so a successful
+      // backend operation is not reported as a failure.
+      const status: GuardDutyStatus | null = await guardService
+        .getDutyStatus()
+        .catch(() => null);
+      const converged =
+        status !== null &&
+        (isClockIn
+          ? status.status === 'on_duty'
+          : status.status === 'off_duty');
+      if (converged) {
+        setDone(true);
+        return;
+      }
+
+      let message: string;
+      if (error instanceof ApiError && error.code === 'DUTY_COOLING_DOWN') {
+        // 24-hour cycle rejection: show the exact next start time computed by
+        // the backend, formatted on the device (never a hardcoded reset time).
+        const next = status?.next_start_at;
+        const time = next ? formatLocalTime(next) : '';
+        message = time
+          ? t('guard.duty.dutyCycleWait', { time })
+          : t('guard.duty.dutyCycleNoTime');
+      } else if (error instanceof ApiError && error.code === 'NETWORK_ERROR') {
+        message = t('guard.common.networkError');
+      } else if (error instanceof Error && error.message) {
+        // Backend business errors already carry a meaningful message.
+        message = error.message;
+      } else {
+        message = t('guard.common.tryAgain');
+      }
+
+      // Exactly one alert per failed user action.
       Alert.alert(
         isClockIn
           ? t('guard.duty.clockInFailed')
           : t('guard.duty.clockOutFailed'),
-        error instanceof Error ? error.message : t('guard.common.tryAgain'),
+        message,
       );
     } finally {
+      submittingRef.current = false;
       setBusy(false);
     }
   };

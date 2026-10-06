@@ -23,6 +23,7 @@ import GuardBottomNavigation, {
 import {
   guardService,
   type GuardDutyDetails,
+  type GuardDutyStatus,
   type PatrolCheckpoint,
   type PatrolScanLog,
 } from '../../../services/guardService';
@@ -53,6 +54,7 @@ export default function GuardPatrolScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<GuardStackParamList>>();
   const [guard, setGuard] = useState<GuardDutyDetails | null>(null);
+  const [duty, setDuty] = useState<GuardDutyStatus | null>(null);
   const [checkpoints, setCheckpoints] = useState<PatrolCheckpoint[]>([]);
   const [recentScans, setRecentScans] = useState<PatrolScanLog[]>([]);
   const [siteName, setSiteName] = useState('');
@@ -69,13 +71,17 @@ export default function GuardPatrolScreen() {
         if (mode === 'refresh') setRefreshing(true);
         else setLoading(true);
         setError('');
-        const details = await guardService.getDutyDetails();
-        // The checkpoint endpoint is the authoritative read: it returns the
-        // persisted visit state of every checkpoint assigned to the guard.
-        const patrol = await guardService
-          .getPatrolCheckpoints()
-          .catch(() => null);
+        // Duty status and checkpoint state are read together: the patrol list
+        // must always reflect the guard's current backend duty session.
+        const [details, patrol, dutyStatus] = await Promise.all([
+          guardService.getDutyDetails(),
+          // Session-scoped visit state: completion resets for every new duty.
+          guardService.getPatrolCheckpoints().catch(() => null),
+          // The same authoritative endpoint the Duty screen (and its timer) uses.
+          guardService.getDutyStatus().catch(() => null),
+        ]);
         setGuard(details);
+        setDuty(dutyStatus);
         setCheckpoints(sortBySequence(patrol?.checkpoints ?? []));
         setRecentScans(patrol?.recent_scans ?? []);
         setSiteId(patrol?.site_id ?? details.site_id ?? null);
@@ -100,6 +106,19 @@ export default function GuardPatrolScreen() {
     setSiteName(patrol.site_name || '');
   }, []);
 
+  /** Silent re-read of the authoritative duty session. */
+  const refreshDuty = useCallback(async () => {
+    const status = await guardService.getDutyStatus().catch(() => null);
+    setDuty(status);
+  }, []);
+
+  // ONE duty state: the backend duty session (duty_logs row), the same source
+  // the Duty screen and its timer read. The timer is considered running while
+  // that active session has a clock-in timestamp. Checkpoint completion is
+  // enabled only while both hold — and the backend enforces it too.
+  const isDutyActive =
+    duty?.status === 'on_duty' && Boolean(duty?.active_log?.clock_in_at);
+
   const progress = useMemo(() => {
     const scanned = checkpoints.filter(point => point.visited).length;
     const total = checkpoints.length;
@@ -113,9 +132,10 @@ export default function GuardPatrolScreen() {
     checkpoints.length > 0 && progress.scanned === checkpoints.length;
 
   const scanOne = async (point: PatrolCheckpoint) => {
-    // One request at a time, and never for a checkpoint the backend already
-    // reports as visited: this also absorbs rapid double taps.
-    if (scanningId != null || point.visited) return;
+    // One request at a time, never for an already-visited checkpoint, and only
+    // during an active duty session (the backend rejects it too — this is the
+    // UX guard, not the security boundary).
+    if (!isDutyActive || scanningId != null || point.visited) return;
     try {
       setScanningId(point.id);
       const result = await guardService.scanPatrolCheckpoint(point.id);
@@ -143,6 +163,9 @@ export default function GuardPatrolScreen() {
       } else {
         Alert.alert(t('guard.patrol.updateFailed'), message);
       }
+      // A rejected scan often means the duty session ended — re-read it so the
+      // list flips back to the off-duty state immediately.
+      await refreshDuty().catch(() => undefined);
     } finally {
       setScanningId(null);
     }
@@ -224,31 +247,37 @@ export default function GuardPatrolScreen() {
             </View>
           ) : null}
           <Section title={t('guard.patrol.progress')}>
-            <View style={s.progressRow}>
-              <Text style={s.progressText}>
-                {t('guard.patrol.completedCount', {
-                  scanned: progress.scanned,
-                  total: progress.total,
-                })}
-              </Text>
-              <Text
-                style={[
-                  s.percent,
-                  progress.percent === 100 && s.percentComplete,
-                ]}
-              >
-                {progress.percent}%
-              </Text>
-            </View>
-            <View style={s.track}>
-              <View
-                style={[
-                  s.fill,
-                  progress.percent === 100 && s.fillComplete,
-                  { width: `${progress.percent}%` },
-                ]}
-              />
-            </View>
+            {isDutyActive ? (
+              <>
+                <View style={s.progressRow}>
+                  <Text style={s.progressText}>
+                    {t('guard.patrol.completedCount', {
+                      scanned: progress.scanned,
+                      total: progress.total,
+                    })}
+                  </Text>
+                  <Text
+                    style={[
+                      s.percent,
+                      progress.percent === 100 && s.percentComplete,
+                    ]}
+                  >
+                    {progress.percent}%
+                  </Text>
+                </View>
+                <View style={s.track}>
+                  <View
+                    style={[
+                      s.fill,
+                      progress.percent === 100 && s.fillComplete,
+                      { width: `${progress.percent}%` },
+                    ]}
+                  />
+                </View>
+              </>
+            ) : (
+              <Text style={s.muted}>{t('guard.patrol.startDutyHint')}</Text>
+            )}
           </Section>
           {nextCheckpoint ? (
             <Section title={t('guard.patrol.nextCheckpoint')}>
@@ -315,7 +344,7 @@ export default function GuardPatrolScreen() {
                     <Text style={s.visitedText}>{t('guard.patrol.visited')}</Text>
                   </View>
                 ) : (
-                  <ScalePressable style={s.visitButton} onPress={() => scanOne(point)} disabled={busy} accessibilityRole="button" accessibilityLabel={t('guard.patrol.markVisited')}>
+                  <ScalePressable style={s.visitButton} onPress={() => scanOne(point)} disabled={!isDutyActive || busy} accessibilityRole="button" accessibilityLabel={t('guard.patrol.markVisited')}>
                     {busy ? <ActivityIndicator size="small" color={colors.white} /> : <Text style={s.visitText}>{t('guard.patrol.markVisited')}</Text>}
                   </ScalePressable>
                 )}

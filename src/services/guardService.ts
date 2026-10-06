@@ -97,6 +97,16 @@ export type GuardDutyStatus = {
   status: GuardDutyLog['status'];
   active_log: GuardDutyLog | null;
   assignment: { site_id: number; site_name: string | null } | null;
+  /**
+   * Backend-authoritative 24-hour duty-cycle eligibility (clock-in side).
+   * Optional so an older API payload still renders; missing is treated as
+   * "off duty = eligible".
+   */
+  can_start?: boolean;
+  /** ISO timestamp of the next allowed clock-in while `can_start` is false. */
+  next_start_at?: string | null;
+  /** True while the current session may be ended (one is active). */
+  can_end?: boolean;
 };
 
 export type DutyPhotoMode = 'clock_in' | 'clock_out';

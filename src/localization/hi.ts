@@ -744,6 +744,8 @@ const hi = {
         close: 'बंद करें',
         featureSoon: 'यह गार्ड सुविधा जल्द उपलब्ध होगी।',
         tryAgain: 'कृपया पुनः प्रयास करें।',
+        networkError:
+          'सर्वर से कनेक्ट नहीं हो सका। कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।',
       },
       duty: {
         scheduleNotSet: 'शेड्यूल तय नहीं है',
@@ -822,6 +824,12 @@ const hi = {
         dutyEnded: 'ड्यूटी खत्म',
         dutyEndedBody:
           'आपकी क्लॉक-आउट फ़ोटो आज के ड्यूटी लॉग में सेव हो गई है।',
+        dutyCycleTitle: 'ड्यूटी उपलब्ध नहीं है',
+        dutyCycleWait:
+          'आप अपना ड्यूटी चक्र पूरा कर चुके हैं। आप अगली ड्यूटी {{time}} बजे शुरू कर सकते हैं।',
+        dutyCycleNoTime:
+          'आप अपना ड्यूटी चक्र पूरा कर चुके हैं। कृपया बाद में पुनः प्रयास करें।',
+        nextDutyHint: 'अगली ड्यूटी {{time}} बजे उपलब्ध',
       },
       schedule: {
         thisWeek: 'इस सप्ताह',
@@ -851,6 +859,7 @@ const hi = {
         notVisited: 'असाइन किया गया चेकपॉइंट',
         progress: 'गश्त प्रगति',
         completedCount: '{{scanned}}/{{total}} पूरे हुए',
+        startDutyHint: 'चेकपॉइंट पूरे करने के लिए अपनी ड्यूटी शुरू करें।',
         nextCheckpoint: 'अगला चेकपॉइंट',
         nextCheckpointHint: 'आपके रूट का अगला चेकपॉइंट',
         recentScans: 'हाल के स्कैन',
