@@ -79,6 +79,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.sentrysecurityapp"
+
     defaultConfig {
         applicationId "com.sentrysecurityapp.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -86,6 +87,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -93,15 +95,24 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+
+        release {
+            if (project.hasProperty('SENTRY_UPLOAD_STORE_FILE')) {
+                storeFile file(SENTRY_UPLOAD_STORE_FILE)
+                storePassword SENTRY_UPLOAD_STORE_PASSWORD
+                keyAlias SENTRY_UPLOAD_KEY_ALIAS
+                keyPassword SENTRY_UPLOAD_KEY_PASSWORD
+            }
+        }
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
+
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
