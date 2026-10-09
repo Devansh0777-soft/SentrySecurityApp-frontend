@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StatusBar,
@@ -30,8 +31,51 @@ import {
   agencyApiService,
   type AgencyGuard,
   type AgencyIncident,
+  type AgencyRatingSummary,
   type AgencySite,
 } from '../../../services/agencyApiService';
+import {
+  payrollService,
+  formatINR,
+  type PayrollSummary,
+} from '../../../services/payrollService';
+import {
+  invoiceService,
+  type AgencyInvoice,
+} from '../../../services/invoiceService';
+
+/** First day of the current month — the period payroll's overview expects. */
+const currentPeriod = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+};
+
+const monthLabel = (period: string, locale: string): string => {
+  const [year, month] = period.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, 1).toLocaleDateString(
+    `${locale}-IN`,
+    { month: 'long', year: 'numeric' },
+  );
+};
+
+const todayLabel = (locale: string): string =>
+  new Date().toLocaleDateString(`${locale}-IN`, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+/** Placeholder shown while a stat is loading or its request failed. */
+const DASH = '—';
+
+/**
+ * An incident counts as open until the agency resolves it. Backend statuses
+ * are open/pending/in_progress/resolved ('closed' is kept for legacy rows);
+ * the old check tested against 'closed', which never occurs, so resolved
+ * incidents kept being counted as open.
+ */
+const isOpenIncident = (item: AgencyIncident): boolean =>
+  !['resolved', 'closed'].includes(item.status ?? 'open');
 
 const Icon = ({
   name,
@@ -47,33 +91,91 @@ const Chevron = () => <Icon name="chevron-right" color="#696969" />;
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyOverview'>;
 
 const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [guardsOnDutyOpen, setGuardsOnDutyOpen] = useState(false);
   const [activeSitesOpen, setActiveSitesOpen] = useState(false);
   const [sites, setSites] = useState<AgencySite[]>([]);
   const [guards, setGuards] = useState<AgencyGuard[]>([]);
   const [incidents, setIncidents] = useState<AgencyIncident[]>([]);
+  // Insight data. Null means "not loaded or request failed" — never rendered
+  // as a zero, so a failed request can't masquerade as an empty result.
+  const [payroll, setPayroll] = useState<PayrollSummary | null>(null);
+  const [payrollPeriod, setPayrollPeriod] = useState(currentPeriod());
+  const [invoices, setInvoices] = useState<AgencyInvoice[] | null>(null);
+  const [ratings, setRatings] = useState<AgencyRatingSummary | null>(null);
+  // Booted gates the first paint: the loading state shows until the first
+  // response arrives, then later focus refreshes update in place.
+  const [booted, setBooted] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const requestIdRef = useRef(0);
+
+  const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    const period = currentPeriod();
+    const results = await Promise.allSettled([
+      agencyApiService.getSites(),
+      agencyApiService.getGuards(),
+      agencyApiService.getIncidents(),
+      payrollService.getOverview(period),
+      invoiceService.getAgencyInvoices(),
+      agencyApiService.getRatings(),
+    ]);
+    // Ignore an obsolete response when a newer request has already started
+    // (fast focus switches, retry while a request is in flight).
+    if (requestIdRef.current !== requestId) return;
+    const [
+      sitesResult,
+      guardsResult,
+      incidentsResult,
+      payrollResult,
+      invoicesResult,
+      ratingsResult,
+    ] = results;
+    let failed = false;
+    if (sitesResult.status === 'fulfilled') {
+      setSites(sitesResult.value);
+    } else {
+      failed = true;
+    }
+    if (guardsResult.status === 'fulfilled') {
+      setGuards(guardsResult.value);
+    } else {
+      failed = true;
+    }
+    if (incidentsResult.status === 'fulfilled') {
+      setIncidents(incidentsResult.value);
+    } else {
+      failed = true;
+    }
+    if (payrollResult.status === 'fulfilled') {
+      setPayroll(payrollResult.value.summary);
+      setPayrollPeriod(payrollResult.value.period);
+    } else {
+      failed = true;
+    }
+    if (invoicesResult.status === 'fulfilled') {
+      setInvoices(invoicesResult.value);
+    } else {
+      failed = true;
+    }
+    if (ratingsResult.status === 'fulfilled') {
+      setRatings(ratingsResult.value);
+    } else {
+      failed = true;
+    }
+    // Partial data still renders; the banner flags exactly what happened
+    // instead of silently showing zeros.
+    setLoadError(failed ? t('dashboard.summaryLoadError') : '');
+    setBooted(true);
+  }, [t]);
+
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      Promise.all([
-        agencyApiService.getSites(),
-        agencyApiService.getGuards(),
-        agencyApiService.getIncidents(),
-      ])
-        .then(([siteItems, guardItems, incidentItems]) => {
-          if (!active) return;
-          setSites(siteItems);
-          setGuards(guardItems);
-          setIncidents(incidentItems);
-        })
-        .catch(() => undefined);
-      return () => {
-        active = false;
-      };
-    }, []),
+      load();
+    }, [load]),
   );
+
   const summary = [
     [
       'users',
@@ -85,7 +187,7 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
     ['grid', String(sites.length), 'activeSites', '#F5A400', '#FFF1D9'],
     [
       'alert-circle',
-      String(incidents.filter(item => item.status !== 'closed').length),
+      String(incidents.filter(isOpenIncident).length),
       'openIncidents',
       '#EF4444',
       '#FDE4E4',
@@ -98,6 +200,31 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
       '#E8EEFF',
     ],
   ] as const;
+
+  const invoiceTotal = (invoices ?? []).reduce(
+    (sum, invoice) => sum + invoice.amount,
+    0,
+  );
+  const invoiceUnpaid = (invoices ?? []).filter(
+    invoice => invoice.status !== 'paid',
+  ).length;
+  const reviewCount = ratings?.rating_count ?? 0;
+  const reviewAverage =
+    ratings && ratings.average_rating != null
+      ? Number(ratings.average_rating)
+      : NaN;
+  const hasReviews =
+    reviewCount > 0 && Number.isFinite(reviewAverage) && reviewAverage > 0;
+  const reviewValue = hasReviews
+    ? `${'★'.repeat(Math.round(reviewAverage))}${'☆'.repeat(
+        5 - Math.round(reviewAverage),
+      )} ${reviewAverage.toFixed(1)} (${reviewCount})`
+    : DASH;
+  const reviewCaption = !ratings
+    ? t('dashboard.notAvailable')
+    : !hasReviews
+    ? t('dashboard.noReviewsYet')
+    : t('dashboard.insightReviewsCaption', { count: reviewCount });
   return (
     // edges: top keeps the header clear of the notch/status bar; bottom keeps
     // the tab bar clear of the home indicator on notched devices.
@@ -124,137 +251,180 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={s.titleRow}>
-          <Text style={s.section}>{t('dashboard.quickSummary')}</Text>
-          <View style={s.date}>
-            <Text style={s.dateText}>{t('dashboard.today')}, 3 Sep 2026</Text>
-            <Icon name="calendar" color="#666" size={24} />
+        {!booted ? (
+          <View style={s.stateBox}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text style={s.stateText}>{t('dashboard.loadingDashboard')}</Text>
           </View>
-        </View>
-
-        <View style={s.grid}>
-          {summary.map(([icon, value, label, color, tint]) => (
-            <TouchableOpacity
-              key={label}
-              style={s.card}
-              onPress={
-                label === 'guardsOnDuty'
-                  ? () => setGuardsOnDutyOpen(true)
-                  : label === 'activeSites'
-                  ? () => setActiveSitesOpen(true)
-                  : label === 'openIncidents'
-                  ? () => navigation.navigate('AgencyIncidents')
-                  : undefined
-              }
-              activeOpacity={
-                label === 'guardsOnDuty' ||
-                label === 'activeSites' ||
-                label === 'openIncidents'
-                  ? 0.8
-                  : 1
-              }
-            >
-              <View style={[s.cardIcon, { backgroundColor: tint }]}>
-                <Icon name={icon} color={color} size={27} />
+        ) : (
+          <>
+            {loadError ? (
+              <View style={s.errorBanner}>
+                <Feather
+                  name="alert-circle"
+                  size={f(18)}
+                  color={colors.status.danger}
+                />
+                <Text style={s.errorText}>{loadError}</Text>
+                <ScalePressable
+                  style={s.retryButton}
+                  onPress={load}
+                  accessibilityRole="button"
+                >
+                  <Text style={s.retryText}>{t('dashboard.retry')}</Text>
+                </ScalePressable>
               </View>
-              <View style={s.cardCopy}>
-                <Text style={[s.number, { color }]}>{value}</Text>
-                <Text style={s.cardLabel}>{t(`dashboard.${label}`)}</Text>
-                <Text style={s.details}>{t('dashboard.viewDetails')} ›</Text>
+            ) : null}
+            <View style={s.titleRow}>
+              <Text style={s.section}>{t('dashboard.quickSummary')}</Text>
+              <View style={s.date}>
+                <Text style={s.dateText}>
+                  {t('dashboard.today')}, {todayLabel(i18n.language)}
+                </Text>
+                <Icon name="calendar" color="#666" size={24} />
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+            </View>
 
-        <View style={s.insights}>
-          <Insight
-            icon="credit-card"
-            title={t('dashboard.payrollSummary')}
-            value="₹1,52,300"
-            caption="April 2026 • 0 pending"
-            color="#33C977"
-            tint="#E2F5E9"
-          />
-          <Insight
-            icon="file-text"
-            title={t('dashboard.invoices')}
-            value="₹45,000"
-            caption="1 pending • 2 invoices"
-            color="#5A8DFF"
-            tint="#EEF3FF"
-            onPress={() => navigation.navigate('AgencyInvoices')}
-          />
-          <Insight
-            icon="star"
-            title={t('dashboard.clientReviews')}
-            value="★★★★★ 5.0 (1)"
-            caption="Sunrise Mall"
-            color="#A57AFF"
-            tint="#F2EDFF"
-            stars
-          />
-        </View>
+            <View style={s.grid}>
+              {summary.map(([icon, value, label, color, tint]) => (
+                <TouchableOpacity
+                  key={label}
+                  style={s.card}
+                  onPress={
+                    label === 'guardsOnDuty'
+                      ? () => setGuardsOnDutyOpen(true)
+                      : label === 'activeSites'
+                      ? () => setActiveSitesOpen(true)
+                      : label === 'openIncidents'
+                      ? () => navigation.navigate('AgencyIncidents')
+                      : undefined
+                  }
+                  activeOpacity={
+                    label === 'guardsOnDuty' ||
+                    label === 'activeSites' ||
+                    label === 'openIncidents'
+                      ? 0.8
+                      : 1
+                  }
+                >
+                  <View style={[s.cardIcon, { backgroundColor: tint }]}>
+                    <Icon name={icon} color={color} size={27} />
+                  </View>
+                  <View style={s.cardCopy}>
+                    <Text style={[s.number, { color }]}>{value}</Text>
+                    <Text style={s.cardLabel}>{t(`dashboard.${label}`)}</Text>
+                    <Text style={s.details}>{t('dashboard.viewDetails')} ›</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-        <Text style={s.section}>{t('dashboard.quickActions')}</Text>
-        <View style={s.actions}>
-          <Action
-            icon="user-plus"
-            text={t('dashboard.addGuard')}
-            color="#0EAA55"
-            onPress={() =>
-              navigation.navigate('AgencyGuards', { openAddGuard: true })
-            }
-          />
-          <Action
-            icon="grid"
-            text={t('dashboard.addSite')}
-            color="#F39A00"
-            onPress={() =>
-              navigation.navigate('AgencySites', { openAddSite: true })
-            }
-          />
-          <Action
-            icon="alert-triangle"
-            text={t('dashboard.incident')}
-            color="#F22121"
-            onPress={() =>
-              navigation.navigate('AgencyIncidents', { openFileIncident: true })
-            }
-          />
-        </View>
+            <View style={s.insights}>
+              <Insight
+                icon="credit-card"
+                title={t('dashboard.payrollSummary')}
+                value={payroll ? formatINR(payroll.total) : DASH}
+                caption={
+                  payroll
+                    ? t('dashboard.insightPayrollCaption', {
+                        month: monthLabel(payrollPeriod, i18n.language),
+                        pending: payroll.pending,
+                      })
+                    : t('dashboard.notAvailable')
+                }
+                color="#33C977"
+                tint="#E2F5E9"
+                onPress={() => navigation.navigate('AgencyPayroll')}
+              />
+              <Insight
+                icon="file-text"
+                title={t('dashboard.invoices')}
+                value={invoices ? formatINR(invoiceTotal) : DASH}
+                caption={
+                  invoices
+                    ? t('dashboard.insightInvoicesCaption', {
+                        pending: invoiceUnpaid,
+                        total: invoices.length,
+                      })
+                    : t('dashboard.notAvailable')
+                }
+                color="#5A8DFF"
+                tint="#EEF3FF"
+                onPress={() => navigation.navigate('AgencyInvoices')}
+              />
+              <Insight
+                icon="star"
+                title={t('dashboard.clientReviews')}
+                value={reviewValue}
+                caption={reviewCaption}
+                color="#A57AFF"
+                tint="#F2EDFF"
+                stars
+              />
+            </View>
 
-        <View style={s.liveHeader}>
-          <Text style={s.section}>{t('dashboard.liveStatus')}</Text>
-          <TouchableOpacity style={s.viewAll}>
-            <Text style={s.viewAllText}>{t('dashboard.viewAll')}</Text>
-            <Icon name="chevron-right" color="#2563EB" size={20} />
-          </TouchableOpacity>
-        </View>
+            <Text style={s.section}>{t('dashboard.quickActions')}</Text>
+            <View style={s.actions}>
+              <Action
+                icon="user-plus"
+                text={t('dashboard.addGuard')}
+                color="#0EAA55"
+                onPress={() =>
+                  navigation.navigate('AgencyGuards', { openAddGuard: true })
+                }
+              />
+              <Action
+                icon="grid"
+                text={t('dashboard.addSite')}
+                color="#F39A00"
+                onPress={() =>
+                  navigation.navigate('AgencySites', { openAddSite: true })
+                }
+              />
+              <Action
+                icon="alert-triangle"
+                text={t('dashboard.incident')}
+                color="#F22121"
+                onPress={() =>
+                  navigation.navigate('AgencyIncidents', { openFileIncident: true })
+                }
+              />
+            </View>
 
-        <View style={s.list}>
-          {sites.map(site => (
-            <Live
-              key={site.id}
-              title={site.site_name}
-              assigned
-              total={guards.filter(guard => guard.site_id === site.id).length}
-              onDuty={
-                guards.filter(
-                  guard =>
-                    guard.site_id === site.id && guard.status === 'on_duty',
-                ).length
-              }
-            />
-          ))}
-          {guards.some(guard => !guard.site_id) ? (
-            <Live
-              title={t('dashboard.unassigned')}
-              assigned={false}
-              total={guards.filter(guard => !guard.site_id).length}
-              onDuty={0}
-            />
-          ) : null}
-        </View>
+            <Text style={[s.section, s.liveSection]}>{t('dashboard.liveStatus')}</Text>
+
+            <View style={s.list}>
+              {sites.map(site => (
+                <Live
+                  key={site.id}
+                  title={site.site_name}
+                  assigned
+                  total={guards.filter(guard => guard.site_id === site.id).length}
+                  onDuty={
+                    guards.filter(
+                      guard =>
+                        guard.site_id === site.id && guard.status === 'on_duty',
+                    ).length
+                  }
+                  onPress={() =>
+                    navigation.navigate('AgencyEventDetails', { siteId: site.id })
+                  }
+                />
+              ))}
+              {guards.some(guard => !guard.site_id) ? (
+                <Live
+                  title={t('dashboard.unassigned')}
+                  assigned={false}
+                  total={guards.filter(guard => !guard.site_id).length}
+                  onDuty={0}
+                  onPress={() =>
+                    navigation.navigate('AgencyEventDetails', { siteId: 0 })
+                  }
+                />
+              ) : null}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <AgencyBottomNavigation
@@ -355,17 +525,20 @@ const Live = ({
   assigned,
   total,
   onDuty,
+  onPress,
 }: {
   title: string;
   assigned: boolean;
   total: number;
   onDuty: number;
+  onPress: () => void;
 }) => (
   <LiveContent
     title={title}
     assigned={assigned}
     total={total}
     onDuty={onDuty}
+    onPress={onPress}
   />
 );
 const LiveContent = ({
@@ -373,15 +546,17 @@ const LiveContent = ({
   assigned,
   total,
   onDuty,
+  onPress,
 }: {
   title: string;
   assigned: boolean;
   total: number;
   onDuty: number;
+  onPress: () => void;
 }) => {
   const { t } = useTranslation();
   return (
-    <TouchableOpacity style={s.live}>
+    <ScalePressable style={s.live} onPress={onPress} accessibilityRole="button">
       <View
         style={[
           s.liveIcon,
@@ -395,7 +570,9 @@ const LiveContent = ({
         />
       </View>
       <View style={s.liveCopy}>
-        <Text style={s.liveTitle}>{title}</Text>
+        <Text style={s.liveTitle} numberOfLines={1}>
+          {title}
+        </Text>
         <Text
           style={[s.liveCaption, assigned ? s.liveAssigned : s.liveUnassigned]}
         >
@@ -403,7 +580,7 @@ const LiveContent = ({
         </Text>
       </View>
       <Chevron />
-    </TouchableOpacity>
+    </ScalePressable>
   );
 };
 
@@ -461,6 +638,33 @@ const s = StyleSheet.create({
   },
   scroll: { flex: 1 },
   content: { padding: w(11), paddingBottom: h(14) },
+  stateBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: h(60),
+    gap: h(12),
+  },
+  stateText: { color: '#707070', fontSize: f(15) },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: w(8),
+    borderWidth: 1,
+    borderColor: '#F5C2C2',
+    backgroundColor: '#FDE4E4',
+    borderRadius: w(8),
+    paddingHorizontal: w(10),
+    paddingVertical: h(10),
+    marginBottom: h(12),
+  },
+  errorText: { flex: 1, color: colors.status.danger, fontSize: f(13) },
+  retryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: w(6),
+    paddingHorizontal: w(12),
+    paddingVertical: h(6),
+  },
+  retryText: { color: colors.white, fontWeight: '700', fontSize: f(13) },
   titleRow: {
     height: h(54),
     flexDirection: 'row',
@@ -546,14 +750,7 @@ const s = StyleSheet.create({
     gap: w(6),
   },
   actionText: { fontWeight: '700', fontSize: f(15) },
-  liveHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: h(12),
-  },
-  viewAll: { flexDirection: 'row', alignItems: 'center' },
-  viewAllText: { color: '#2563EB', fontWeight: '600', fontSize: f(14) },
+  liveSection: { marginTop: h(22), marginBottom: h(12) },
   list: {
     borderWidth: 1,
     borderColor: '#DCDCDC',

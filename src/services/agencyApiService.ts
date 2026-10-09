@@ -77,6 +77,11 @@ export type AgencyCoverageRequest = {
   created_at: string;
   checkpoints?: Array<{ id: number; name: string; sequence_order: number }>;
 };
+export type AgencyRatingSummary = {
+  /** One-decimal average from Postgres; null when the agency has no reviews. */
+  average_rating: string | number | null;
+  rating_count: number;
+};
 type ApiList<T> = { success: boolean; data: T[] };
 
 export const agencyApiService = {
@@ -85,6 +90,13 @@ export const agencyApiService = {
       await apiRequest<ApiList<AgencySite>>('/agency/sites', {
         authenticated: true,
       })
+    ).data,
+  getSite: async (id: number) =>
+    (
+      await apiRequest<{ success: boolean; data: AgencySite }>(
+        `/agency/sites/${id}`,
+        { authenticated: true },
+      )
     ).data,
   createSite: (body: object) =>
     apiRequest('/agency/sites', { method: 'POST', body, authenticated: true }),
@@ -170,6 +182,14 @@ export const agencyApiService = {
       await apiRequest<{ success: boolean; data: AgencyIncident }>(
         `/agency/incidents/${id}/status`,
         { method: 'PATCH', body: { status }, authenticated: true },
+      )
+    ).data,
+  /** Agency-wide client rating average + count (dashboard Client Reviews card). */
+  getRatings: async (): Promise<AgencyRatingSummary> =>
+    (
+      await apiRequest<{ success: boolean; data: AgencyRatingSummary }>(
+        '/agency/ratings',
+        { authenticated: true },
       )
     ).data,
   getSiteCheckpoints: async (siteId: number) =>

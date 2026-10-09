@@ -30,6 +30,9 @@ export type MainStackParamList = {
   AgencyGuards: { openAddGuard?: boolean } | undefined;
   AgencyPlan: undefined;
   AgencyInvoices: undefined;
+  AgencyPayroll: undefined;
+  AgencyPayrollDetails: { guardId: number; period: string };
+  AgencyEventDetails: { siteId: number };
 };
 
 export type GuardSectionKey =

@@ -1,13 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
+
+import { useTranslation } from 'react-i18next';
 
 import {
   clientService,
@@ -39,6 +34,7 @@ const statusStyle = (status: ClientAlert['status']) =>
     : s.pending;
 
 export default function ClientAlerts() {
+  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,7 +47,7 @@ export default function ClientAlerts() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : 'Unable to load alerts.',
+          : t('client.loadFailedAlerts'),
       );
     } finally {
       setLoading(false);
@@ -71,7 +67,7 @@ export default function ClientAlerts() {
     return (
       <View style={s.state}>
         <ActivityIndicator color={colors.primary} />
-        <Text style={s.muted}>Loading alerts…</Text>
+        <Text style={s.muted}>{t('client.loadingAlerts')}</Text>
       </View>
     );
   if (error)
@@ -84,9 +80,9 @@ export default function ClientAlerts() {
     return (
       <View style={s.state}>
         <Feather name="shield" size={scaleFont(26)} color={colors.primary} />
-        <Text style={s.title}>No alerts</Text>
+        <Text style={s.title}>{t('client.noAlerts')}</Text>
         <Text style={s.muted}>
-          Incidents from your active sites will appear here.
+          {t('client.noAlertsHint')}
         </Text>
       </View>
     );
@@ -116,9 +112,7 @@ export default function ClientAlerts() {
             <Text
               style={[s.filterText, filter === value && s.filterTextActive]}
             >
-              {value === 'all'
-                ? 'All'
-                : value.charAt(0).toUpperCase() + value.slice(1)}
+              {t(`client.alertFilters.${value}`)}
             </Text>
           </ScalePressable>
         ))}
@@ -161,7 +155,7 @@ export default function ClientAlerts() {
         })
       ) : (
         <View style={s.emptyFiltered}>
-          <Text style={s.muted}>No {filter} severity alerts.</Text>
+          <Text style={s.muted}>{t('client.noAlertsFiltered', { filter })}</Text>
         </View>
       )}
     </ScrollView>
