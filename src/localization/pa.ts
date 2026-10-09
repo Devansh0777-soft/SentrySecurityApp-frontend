@@ -232,7 +232,7 @@ const pa = {
       fullName: 'ਪੂਰਾ ਨਾਮ',
       mobileNumber: 'ਮੋਬਾਈਲ ਨੰਬਰ',
       confirmPassword: 'ਪਾਸਵਰਡ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ',
-      exampleName: 'ਜਿਵੇਂ ਆਕਾਸ਼ ਸਿੰਘ',
+      exampleName: 'ਜਿਵੇਂ ਜੱਸ ਸਿੰਘ',
       alreadyAccount: 'ਪਹਿਲਾਂ ਹੀ ਖਾਤਾ ਹੈ?',
       invalidName: 'ਗਲਤ ਨਾਮ',
       enterFullName: 'ਆਪਣਾ ਪੂਰਾ ਨਾਮ ਦਰਜ ਕਰੋ।',

@@ -234,7 +234,7 @@ const hi = {
       fullName: 'पूरा नाम',
       mobileNumber: 'मोबाइल नंबर',
       confirmPassword: 'पासवर्ड की पुष्टि करें',
-      exampleName: 'जैसे आकाश सिंह',
+      exampleName: 'जैसे जस्स सिंह',
       alreadyAccount: 'पहले से खाता है?',
       invalidName: 'अमान्य नाम',
       enterFullName: 'अपना पूरा नाम दर्ज करें।',

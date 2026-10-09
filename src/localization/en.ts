@@ -227,7 +227,7 @@ const en = {
       fullName: 'Full Name',
       mobileNumber: 'Mobile Number',
       confirmPassword: 'Confirm Password',
-      exampleName: 'e.g. Akash Singh',
+      exampleName: 'e.g. Jass Singh',
       alreadyAccount: 'Already have an account?',
       invalidName: 'Invalid name',
       enterFullName: 'Enter your full name.',
