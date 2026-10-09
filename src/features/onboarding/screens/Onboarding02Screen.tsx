@@ -13,6 +13,7 @@ import type {
 } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LanguageSelector from '../../../components/common/LanguageSelector';
 import type {
@@ -26,6 +27,7 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'Onboarding02'>;
 
 const Onboarding02Screen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const skipOnboarding = () => {
     navigation
@@ -43,7 +45,9 @@ const Onboarding02Screen: React.FC<Props> = ({ navigation }) => {
         resizeMode="contain"
       />
 
-      <LanguageSelector />
+      <View style={[styles.langWrap, { top: insets.top + scaleHeight(8) }]}>
+        <LanguageSelector />
+      </View>
 
       <Text style={styles.heading}>{t('onboarding.step2.title')}</Text>
 
@@ -79,6 +83,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
+  },
+  langWrap: {
+    position: 'absolute',
+    right: scaleWidth(16),
+    zIndex: 10,
+    elevation: 10,
   },
   illustration: {
     position: 'absolute',

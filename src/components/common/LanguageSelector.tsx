@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../styles/colors';
 import { scaleWidth, scaleHeight, scaleFont } from '../../styles/dimensions';
 
@@ -20,6 +21,7 @@ const LANGUAGES = [
 
 const LanguageSelector: React.FC = () => {
   const { i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
 
   const current = LANGUAGES.find(l => l.code === i18n.language) ?? LANGUAGES[0];
@@ -31,7 +33,15 @@ const LanguageSelector: React.FC = () => {
 
   return (
     <>
-      <TouchableOpacity style={styles.pill} onPress={() => setVisible(true)}>
+      <TouchableOpacity
+        style={styles.pill}
+        onPress={() => setVisible(true)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel={`Language: ${current.label}`}
+        accessibilityHint="Opens the language menu"
+        accessibilityState={{ expanded: visible }}
+      >
         <Feather name="globe" size={scaleFont(20)} color={colors.primary} />
         <Text style={styles.text}>{current.code.toUpperCase()}</Text>
         <Feather
@@ -47,7 +57,18 @@ const LanguageSelector: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setVisible(false)}
       >
-        <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
+        <Pressable
+          style={[
+            styles.overlay,
+            {
+              paddingTop: Math.max(
+                scaleHeight(72),
+                insets.top + scaleHeight(16),
+              ),
+            },
+          ]}
+          onPress={() => setVisible(false)}
+        >
           <View style={styles.dropdown} onStartShouldSetResponder={() => true}>
             {LANGUAGES.map(lang => (
               <TouchableOpacity
@@ -89,7 +110,7 @@ const styles = StyleSheet.create({
   pill: {
     alignSelf: 'flex-end',
     minWidth: scaleWidth(93),
-    minHeight: scaleHeight(32),
+    minHeight: scaleHeight(44),
     paddingHorizontal: scaleWidth(10),
     flexDirection: 'row',
     alignItems: 'center',
