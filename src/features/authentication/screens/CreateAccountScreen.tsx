@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -10,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
@@ -109,34 +112,44 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
+      {/* Language pill floats above the header; content wrapper reserves
+          vertical room so it never overlaps the back button or logo. */}
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
+      >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled
       >
-        <LanguageSelector />
-
-        {forceAccountType ? (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={cancel}
-            accessibilityLabel={t('auth.backToSuperAdmin')}
-          >
-            <Feather
-              name="arrow-left"
-              size={scaleFont(26)}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-        ) : null}
+        <View style={styles.topBar}>
+          {forceAccountType ? (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={cancel}
+              accessibilityLabel={t('auth.backToSuperAdmin')}
+            >
+              <Feather
+                name="arrow-left"
+                size={scaleFont(26)}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.backButtonPlaceholder} />
+          )}
+          <LanguageSelector />
+        </View>
 
         <Image
           source={require('../../../assets/images/login-shield-logo.png')}
           style={styles.logo}
-          resizeMode="cover"
+          resizeMode="contain"
         />
 
         <Text style={styles.heading}>{t('auth.createAccount')}</Text>
@@ -155,18 +168,16 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         ) : null}
 
-        <Text style={styles.fullNameLabel}>{t('auth.fullName')}</Text>
+        <Text style={styles.fieldLabel}>{t('auth.fullName')}</Text>
         <FormInput
-          style={styles.fullNameInput}
           icon="user"
           value={name}
           onChangeText={setName}
           placeholder={t('auth.exampleName')}
         />
 
-        <Text style={styles.mobileLabel}>{t('auth.mobileNumber')}</Text>
+        <Text style={styles.fieldLabel}>{t('auth.mobileNumber')}</Text>
         <FormInput
-          style={styles.mobileInput}
           icon="phone"
           value={mobile}
           onChangeText={value => setMobile(digitsOnly(value).slice(0, 10))}
@@ -174,9 +185,8 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
           keyboardType="phone-pad"
         />
 
-        <Text style={styles.emailLabel}>{t('auth.emailAddress')}</Text>
+        <Text style={styles.fieldLabel}>{t('auth.emailAddress')}</Text>
         <FormInput
-          style={styles.emailInput}
           icon="mail"
           value={email}
           onChangeText={setEmail}
@@ -185,9 +195,8 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
           autoCapitalize="none"
         />
 
-        <Text style={styles.passwordLabel}>{t('auth.password')}</Text>
+        <Text style={styles.fieldLabel}>{t('auth.password')}</Text>
         <PasswordInput
-          style={styles.passwordInput}
           value={password}
           onChangeText={setPassword}
           visible={passwordVisible}
@@ -195,11 +204,10 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
           placeholder={t('auth.enterPassword')}
         />
 
-        <Text style={styles.confirmPasswordLabel}>
+        <Text style={styles.fieldLabel}>
           {t('auth.confirmPassword')}
         </Text>
         <PasswordInput
-          style={styles.confirmPasswordInput}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           visible={confirmPasswordVisible}
@@ -253,12 +261,12 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         ) : null}
       </ScrollView>
-    </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 type FormInputProps = {
-  style: object;
   icon: React.ComponentProps<typeof Feather>['name'];
   value: string;
   onChangeText: (value: string) => void;
@@ -268,7 +276,6 @@ type FormInputProps = {
 };
 
 const FormInput: React.FC<FormInputProps> = ({
-  style,
   icon,
   value,
   onChangeText,
@@ -276,7 +283,7 @@ const FormInput: React.FC<FormInputProps> = ({
   keyboardType,
   autoCapitalize,
 }) => (
-  <View style={[styles.inputWrapper, style]}>
+  <View style={styles.inputWrapper}>
     <Feather name={icon} size={scaleFont(24)} color="#A3A3A3" />
     <TextInput
       value={value}
@@ -292,7 +299,6 @@ const FormInput: React.FC<FormInputProps> = ({
 );
 
 type PasswordInputProps = {
-  style: object;
   value: string;
   onChangeText: (value: string) => void;
   visible: boolean;
@@ -301,14 +307,13 @@ type PasswordInputProps = {
 };
 
 const PasswordInput: React.FC<PasswordInputProps> = ({
-  style,
   value,
   onChangeText,
   visible,
   onToggleVisibility,
   placeholder,
 }) => (
-  <View style={[styles.inputWrapper, style]}>
+  <View style={styles.inputWrapper}>
     <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
     <TextInput
       value={value}
@@ -381,33 +386,37 @@ const AccountTypeCard: React.FC<AccountTypeCardProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
+  keyboard: { flex: 1 },
   scrollContent: {
-    width: scaleWidth(402),
-    height: scaleHeight(1168),
+    flexGrow: 1,
     backgroundColor: colors.white,
+    paddingHorizontal: scaleWidth(19),
+    paddingBottom: scaleHeight(32),
   },
-  logo: {
-    position: 'absolute',
-    left: scaleWidth(150),
-    top: scaleHeight(78),
-    width: scaleWidth(101),
-    height: scaleHeight(101),
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: scaleHeight(44),
+    paddingTop: scaleHeight(4),
+    marginBottom: scaleHeight(4),
   },
   backButton: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(42),
     width: scaleWidth(44),
     height: scaleHeight(44),
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
   },
+  backButtonPlaceholder: { width: scaleWidth(44), height: scaleHeight(44) },
+  logo: {
+    alignSelf: 'center',
+    width: scaleWidth(101),
+    height: scaleHeight(101),
+    marginTop: scaleHeight(8),
+  },
   heading: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(183),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(8),
     textAlign: 'center',
     fontSize: scaleFont(42),
     lineHeight: scaleFont(51),
@@ -415,20 +424,14 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   subtitle: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(233),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(4),
     textAlign: 'center',
     fontSize: scaleFont(20),
     lineHeight: scaleFont(24),
     color: colors.primary,
   },
   authTabs: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(266),
-    width: scaleWidth(363),
+    marginTop: scaleHeight(16),
     height: scaleHeight(45),
     borderWidth: 1,
     borderColor: '#000000',
@@ -443,7 +446,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inactiveTab: {
-    width: scaleWidth(179),
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -457,51 +460,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
   },
-  fullNameLabel: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(342),
-    fontSize: scaleFont(22),
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  mobileLabel: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(449),
-    fontSize: scaleFont(22),
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  emailLabel: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(551),
-    fontSize: scaleFont(22),
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  passwordLabel: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(648),
-    fontSize: scaleFont(22),
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  confirmPasswordLabel: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(747),
+  fieldLabel: {
+    marginTop: scaleHeight(20),
+    marginBottom: scaleHeight(6),
+    marginLeft: scaleWidth(4),
     fontSize: scaleFont(22),
     fontWeight: '500',
     color: colors.primary,
   },
   inputWrapper: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    width: scaleWidth(363),
-    height: scaleHeight(50),
+    minHeight: scaleHeight(50),
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 8,
@@ -509,49 +477,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: scaleWidth(13),
   },
-  fullNameInput: { top: scaleHeight(375) },
-  mobileInput: { top: scaleHeight(478) },
-  emailInput: { top: scaleHeight(577) },
-  passwordInput: { top: scaleHeight(678) },
-  confirmPasswordInput: { top: scaleHeight(778) },
   input: {
     flex: 1,
-    height: '100%',
+    minWidth: 0,
+    minHeight: scaleHeight(48),
     paddingHorizontal: scaleWidth(8),
-    paddingVertical: 0,
+    paddingVertical: scaleHeight(8),
     fontSize: scaleFont(16),
     color: colors.primary,
   },
   eyeButton: {
-    height: '100%',
+    minHeight: scaleHeight(48),
     paddingHorizontal: scaleWidth(16),
     justifyContent: 'center',
   },
   accountTypeLabel: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(850),
+    marginTop: scaleHeight(24),
     fontSize: scaleFont(20),
     fontWeight: '700',
     color: colors.primary,
   },
   accountTypeRow: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(889),
+    marginTop: scaleHeight(12),
     flexDirection: 'row',
     gap: scaleWidth(13),
   },
   accountTypeCard: {
-    width: scaleWidth(170),
-    height: scaleHeight(148),
+    flex: 1,
+    minWidth: 0,
+    minHeight: scaleHeight(148),
     borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: scaleWidth(12),
   },
-  accountTypeCardFull: { width: scaleWidth(363) },
+  accountTypeCardFull: { flex: 1 },
   accountTypeCardActive: { backgroundColor: colors.primary },
   accountTypeTitle: {
     marginTop: scaleHeight(5),
@@ -568,28 +530,25 @@ const styles = StyleSheet.create({
   },
   accountTypeTextActive: { color: colors.white },
   continueButton: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(1056),
-    width: scaleWidth(363),
-    height: scaleHeight(50),
+    marginTop: scaleHeight(28),
+    minHeight: scaleHeight(50),
     borderRadius: 8,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: scaleHeight(10),
   },
   continueText: {
     fontSize: scaleFont(24),
     fontWeight: '700',
     color: colors.white,
+    textAlign: 'center',
   },
   loginRow: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(1127),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(20),
     flexDirection: 'row',
     justifyContent: 'center',
+    flexWrap: 'wrap',
   },
   loginPrompt: {
     fontSize: scaleFont(20),

@@ -67,29 +67,36 @@ const AgencyBottomNavigation: React.FC<Props> = ({ activeTab, onTabPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    height: scaleHeight(69),
+    minHeight: scaleHeight(69),
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: scaleWidth(3),
+    alignItems: 'stretch',
+    gap: 0,
     paddingHorizontal: scaleWidth(4),
+    paddingBottom: scaleHeight(4),
     backgroundColor: colors.white,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',
   },
   tab: {
     flex: 1,
-    height: '100%',
+    minWidth: 0,
     minHeight: scaleHeight(48),
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: scaleWidth(8),
+    paddingHorizontal: scaleWidth(2),
   },
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: scaleHeight(2),
   },
-  label: { fontWeight: '600', color: colors.primary, fontSize: scaleFont(11) },
+  label: {
+    fontWeight: '600',
+    color: colors.primary,
+    fontSize: scaleFont(11),
+    textAlign: 'center',
+  },
   activeLabel: { color: '#2563EB' },
 });
 

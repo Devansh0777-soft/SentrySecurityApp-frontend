@@ -61,18 +61,21 @@ const styles = StyleSheet.create({
   container: {
     minHeight: scaleHeight(69),
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: 0,
     paddingHorizontal: spacing.xs,
-    alignItems: 'center',
+    paddingBottom: spacing.xs,
+    alignItems: 'stretch',
     backgroundColor: colors.white,
     borderTopWidth: 1,
     borderTopColor: colors.light.border,
   },
   tab: {
     flex: 1,
+    minWidth: 0,
     minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 2,
   },
   tabContent: {
     alignItems: 'center',
@@ -84,6 +87,7 @@ const styles = StyleSheet.create({
     fontSize: scaleFont(typography.sizes.xs),
     fontWeight: typography.weights.semiBold,
     color: colors.primary,
+    textAlign: 'center',
   },
   activeLabel: { color: colors.status.info },
 });

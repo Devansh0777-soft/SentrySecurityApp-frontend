@@ -1,12 +1,14 @@
 import React from 'react';
 import {
   Image,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
@@ -53,32 +55,41 @@ const AccountCreatedScreen: React.FC<Props> = ({ navigation, route }) => {
     navigation.popToTop();
   };
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
 
-      <LanguageSelector />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+      <View style={styles.topBar}>
+        <View style={styles.topBarPlaceholder} />
+        <LanguageSelector />
+      </View>
 
-      {DOTS.map((dot, index) => (
-        <View
-          key={index}
-          style={[
-            styles.confettiDot,
-            {
-              left: scaleWidth(dot.left),
-              top: scaleHeight(dot.top),
-              backgroundColor: dot.color,
-            },
-          ]}
+      <View style={styles.hero}>
+        {DOTS.map((dot, index) => (
+          <View
+            key={index}
+            style={[
+              styles.confettiDot,
+              {
+                left: scaleWidth(dot.left),
+                top: scaleHeight(dot.top),
+                backgroundColor: dot.color,
+              },
+            ]}
+          />
+        ))}
+
+        <Image
+          source={require('../../../assets/images/login-shield-logo.png')}
+          style={styles.successShield}
+          resizeMode="contain"
         />
-      ))}
-
-      <Image
-        source={require('../../../assets/images/login-shield-logo.png')}
-        style={styles.successShield}
-        resizeMode="contain"
-      />
-      <View style={styles.successBadge}>
-        <Feather name="check" size={scaleFont(34)} color={colors.white} />
+        <View style={styles.successBadge}>
+          <Feather name="check" size={scaleFont(34)} color={colors.white} />
+        </View>
       </View>
 
       <Text style={styles.heading}>Account Created{`\n`}Successfully!</Text>
@@ -93,12 +104,35 @@ const AccountCreatedScreen: React.FC<Props> = ({ navigation, route }) => {
           {returnToSuperAdmin ? 'Back to Super Admin' : 'Go to Login'}
         </Text>
       </TouchableOpacity>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: scaleWidth(19),
+    paddingBottom: scaleHeight(32),
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: scaleHeight(44),
+    paddingTop: scaleHeight(4),
+    marginBottom: scaleHeight(4),
+  },
+  topBarPlaceholder: { width: scaleWidth(44), height: scaleHeight(44) },
+  hero: {
+    alignSelf: 'center',
+    width: scaleWidth(302),
+    height: scaleHeight(302),
+    marginTop: scaleHeight(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   confettiDot: {
     position: 'absolute',
     width: scaleWidth(8),
@@ -106,16 +140,13 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   successShield: {
-    position: 'absolute',
-    left: scaleWidth(100),
-    top: scaleHeight(218),
     width: scaleWidth(202),
     height: scaleHeight(202),
   },
   successBadge: {
     position: 'absolute',
-    left: scaleWidth(239),
-    top: scaleHeight(222),
+    right: scaleWidth(8),
+    top: scaleHeight(4),
     width: scaleWidth(59),
     height: scaleHeight(59),
     borderRadius: 100,
@@ -124,10 +155,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#35C759',
   },
   heading: {
-    position: 'absolute',
-    left: scaleWidth(27),
-    top: scaleHeight(465),
-    width: scaleWidth(348),
+    marginTop: scaleHeight(16),
+    paddingHorizontal: scaleWidth(4),
     textAlign: 'center',
     fontSize: scaleFont(32),
     lineHeight: scaleFont(39),
@@ -135,30 +164,27 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   subtitle: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(551),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(8),
+    paddingHorizontal: scaleWidth(4),
     textAlign: 'center',
     fontSize: scaleFont(20),
     lineHeight: scaleFont(29),
     color: colors.primary,
   },
   loginButton: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(782),
-    width: scaleWidth(363),
-    height: scaleHeight(50),
+    marginTop: scaleHeight(40),
+    minHeight: scaleHeight(50),
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
+    paddingVertical: scaleHeight(10),
   },
   loginButtonText: {
     fontSize: scaleFont(24),
     fontWeight: '700',
     color: colors.white,
+    textAlign: 'center',
   },
 });
 

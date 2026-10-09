@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -9,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
@@ -101,23 +105,33 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
-
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        accessibilityLabel={t('auth.goBack')}
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
       >
-        <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
-      </TouchableOpacity>
-
-      <LanguageSelector />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityLabel={t('auth.goBack')}
+        >
+          <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
+        </TouchableOpacity>
+        <LanguageSelector />
+      </View>
 
       <Image
         source={require('../../../assets/images/login-shield-logo.png')}
         style={styles.logo}
-        resizeMode="cover"
+        resizeMode="contain"
       />
 
       <Text style={styles.heading}>{t('auth.verifyOtp')}</Text>
@@ -165,33 +179,43 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation }) => {
           {isSubmitting ? t('auth.verifying') : t('auth.verifyContinue')}
         </Text>
       </TouchableOpacity>
-    </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
+  keyboard: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: scaleWidth(19),
+    paddingBottom: scaleHeight(32),
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: scaleHeight(44),
+    paddingTop: scaleHeight(4),
+    marginBottom: scaleHeight(4),
+  },
   backButton: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(50),
-    width: scaleWidth(26),
-    height: scaleHeight(26),
+    width: scaleWidth(44),
+    height: scaleHeight(44),
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 8,
   },
   logo: {
-    position: 'absolute',
-    left: scaleWidth(150),
-    top: scaleHeight(80),
+    alignSelf: 'center',
     width: scaleWidth(101),
     height: scaleHeight(101),
+    marginTop: scaleHeight(8),
   },
   heading: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(308),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(16),
     textAlign: 'center',
     fontSize: scaleFont(32),
     lineHeight: scaleFont(39),
@@ -199,20 +223,14 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   subtitle: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(350),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(4),
     textAlign: 'center',
     fontSize: scaleFont(20),
     lineHeight: scaleFont(24),
     color: colors.primary,
   },
   phoneNumber: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(392),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(8),
     textAlign: 'center',
     fontSize: scaleFont(20),
     lineHeight: scaleFont(24),
@@ -220,15 +238,17 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   otpRow: {
-    position: 'absolute',
-    left: scaleWidth(30),
-    top: scaleHeight(440),
+    marginTop: scaleHeight(24),
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: scaleWidth(10),
+    flexWrap: 'wrap',
   },
   otpInput: {
-    width: scaleWidth(48),
-    height: scaleHeight(49),
+    flex: 1,
+    minWidth: scaleWidth(44),
+    maxWidth: scaleWidth(56),
+    minHeight: scaleHeight(49),
     borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: 8,
@@ -238,22 +258,17 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   didNotReceive: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(521),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(24),
     textAlign: 'center',
     fontSize: scaleFont(20),
     lineHeight: scaleFont(24),
     color: colors.primary,
   },
   resendRow: {
-    position: 'absolute',
-    left: scaleWidth(23),
-    top: scaleHeight(554),
-    width: scaleWidth(355),
+    marginTop: scaleHeight(4),
     flexDirection: 'row',
     justifyContent: 'center',
+    flexWrap: 'wrap',
   },
   resendLink: {
     fontSize: scaleFont(20),
@@ -267,20 +282,19 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   verifyButton: {
-    position: 'absolute',
-    left: scaleWidth(19),
-    top: scaleHeight(782),
-    width: scaleWidth(363),
-    height: scaleHeight(50),
+    marginTop: scaleHeight(32),
+    minHeight: scaleHeight(50),
     borderRadius: 8,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: scaleHeight(10),
   },
   verifyButtonText: {
     fontSize: scaleFont(24),
     fontWeight: '700',
     color: colors.white,
+    textAlign: 'center',
   },
 });
 
