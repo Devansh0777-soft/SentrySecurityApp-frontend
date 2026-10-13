@@ -14,24 +14,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
 
 import LanguageSelector from '../../../components/common/LanguageSelector';
-import type {
-  AuthStackParamList,
-  RootStackParamList,
-} from '../../../navigation/types';
+import type { AuthStackParamList } from '../../../navigation/types';
 import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { isValidEmail, passwordError } from '../../../utils/validation';
-import { authService } from '../../../services/authService';
+import { useAuth } from '../context/AuthContext';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
+  const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -50,26 +47,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     }
     try {
       setIsSubmitting(true);
-      const response = await authService.login(identifier.trim(), password);
-      const accountType =
-        response.admin?.account_type ?? response.user?.account_type;
-      navigation
-        .getParent<NativeStackNavigationProp<RootStackParamList>>()
-        ?.reset({
-          index: 0,
-          routes: [
-            {
-              name:
-                accountType === 'superAdmin'
-                  ? 'SuperAdminFlow'
-                  : accountType === 'client'
-                  ? 'ClientFlow'
-                  : accountType === 'guard'
-                  ? 'GuardFlow'
-                  : 'MainFlow',
-            },
-          ],
-        });
+      // The centralised login persists the token + profile and flips auth
+      // state; AppNavigator reacts by resetting to the correct role dashboard.
+      await login({ identifier: identifier.trim(), password });
     } catch (loginError) {
       Alert.alert(
         t('auth.loginFailed'),

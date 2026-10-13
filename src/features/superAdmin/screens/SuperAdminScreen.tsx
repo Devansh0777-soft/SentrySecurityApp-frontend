@@ -26,7 +26,7 @@ import SuperAdminAgencyEditorModal, {
 } from '../components/SuperAdminAgencyEditorModal';
 import SuperAdminNotificationsModal from '../components/SuperAdminNotificationsModal';
 import ScalePressable from '../../../components/common/ScalePressable';
-import { session } from '../../../services/session';
+import { useAuth } from '../../authentication/context/AuthContext';
 import { superAdminService } from '../../../services/superAdminService';
 import { notificationService } from '../../../services/notificationService';
 import { colors } from '../../../styles/colors';
@@ -37,6 +37,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 
 export default function SuperAdminScreen() {
   const { t } = useTranslation();
+  const { logout } = useAuth();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [tab, setTab] = useState<AdminTab>('agencies');
@@ -105,8 +106,9 @@ export default function SuperAdminScreen() {
   }, [refreshNotifications]);
 
   const signOut = async () => {
-    await session.clearToken();
-    navigation.reset({ index: 0, routes: [{ name: 'AuthFlow' }] });
+    // Centralised logout clears persisted auth and flips auth state;
+    // AppNavigator resets the stack to AuthFlow.
+    await logout();
   };
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>

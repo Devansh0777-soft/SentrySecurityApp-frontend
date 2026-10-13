@@ -11,8 +11,6 @@ import {
   BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import ClientTopNavigation from '../components/ClientTopNavigation';
 import ClientBottomNavigation, {
@@ -33,8 +31,7 @@ import {
   type ClientDetails,
   type CoverageRequest,
 } from '../../../services/clientService';
-import { session } from '../../../services/session';
-import type { RootStackParamList } from '../../../navigation/types';
+import { useAuth } from '../../authentication/context/AuthContext';
 import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
@@ -42,8 +39,7 @@ import { scaleFont } from '../../../styles/dimensions';
 
 export default function ClientPortalScreen() {
   const { t } = useTranslation();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { logout } = useAuth();
   const [tab, setTab] = useState<ClientTab>('home');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [details, setDetails] = useState<ClientDetails | null>(null);
@@ -87,8 +83,9 @@ export default function ClientPortalScreen() {
     return () => subscription.remove();
   }, [informationPage]);
   const signOut = async () => {
-    await session.clearToken();
-    navigation.reset({ index: 0, routes: [{ name: 'AuthFlow' }] });
+    // Centralised logout clears persisted auth and flips auth state;
+    // AppNavigator resets the stack to AuthFlow.
+    await logout();
   };
   const emailSupport = async () => {
     try {

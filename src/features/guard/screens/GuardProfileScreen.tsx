@@ -27,7 +27,7 @@ import {
   guardService,
   type GuardProfile,
 } from '../../../services/guardService';
-import { session } from '../../../services/session';
+import { useAuth } from '../../authentication/context/AuthContext';
 import GuardTopNavigation from '../components/GuardTopNavigation';
 import GuardBottomNavigation, {
   type GuardTab,
@@ -40,6 +40,7 @@ const ACCENT = '#B9640A';
 
 const GuardProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
+  const { logout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profile, setProfile] = useState<GuardProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,10 +65,9 @@ const GuardProfileScreen: React.FC<Props> = ({ navigation }) => {
   }, [loadProfile]);
 
   const signOut = async () => {
-    await session.clearToken();
-    navigation
-      .getParent()
-      ?.reset({ index: 0, routes: [{ name: 'AuthFlow' as never }] });
+    // Centralised logout clears persisted auth and flips auth state;
+    // AppNavigator resets the stack to AuthFlow.
+    await logout();
   };
   const handleTab = (tab: GuardTab) => {
     setProfileMenuOpen(false);

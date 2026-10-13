@@ -21,7 +21,7 @@ import {
   accountService,
   type AgencyProfile,
 } from '../../../services/accountService';
-import { session } from '../../../services/session';
+import { useAuth } from '../../authentication/context/AuthContext';
 import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
@@ -73,6 +73,7 @@ const emptyForm: Form = {
 
 const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
+  const { logout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [form, setForm] = useState<Form>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -177,10 +178,9 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
   const signOut = async () => {
-    await session.clearToken();
-    navigation
-      .getParent()
-      ?.reset({ index: 0, routes: [{ name: 'AuthFlow' as never }] });
+    // Centralised logout clears persisted auth and flips auth state;
+    // AppNavigator resets the stack to AuthFlow.
+    await logout();
   };
   const navigate = (tab: AgencyNavTab) => {
     if (tab === 'overview') navigation.navigate('AgencyOverview');

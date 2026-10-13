@@ -12,4 +12,7 @@ module.exports = {
   moduleNameMapper: {
     '^react-native-sound$': '<rootDir>/__mocks__/react-native-sound.js',
   },
+  // Mock AsyncStorage so auth session restoration works in tests without the
+  // native module.
+  setupFiles: ['<rootDir>/jest.setup.js'],
 };

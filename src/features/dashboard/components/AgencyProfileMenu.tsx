@@ -8,13 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type {
-  MainStackParamList,
-  RootStackParamList,
-} from '../../../navigation/types';
-import { session } from '../../../services/session';
+import { useAuth } from '../../authentication/context/AuthContext';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -106,23 +100,17 @@ const AgencyProfileMenu: React.FC<Props> = ({
   hideIdentity = false,
 }) => {
   const { i18n, t } = useTranslation();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const { logout } = useAuth();
   const logoutPending = useRef(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const logout = async () => {
+  const logoutHandler = async () => {
     if (logoutPending.current) return;
     logoutPending.current = true;
     setLoggingOut(true);
     try {
-      await session.clearToken();
-      const rootNavigation =
-        navigation.getParent<NativeStackNavigationProp<RootStackParamList>>() ??
-        (navigation as unknown as NativeStackNavigationProp<RootStackParamList>);
-      rootNavigation.reset({
-        index: 0,
-        routes: [{ name: 'AuthFlow' }],
-      });
+      // Centralised logout clears persisted auth and flips auth state;
+      // AppNavigator resets the stack to AuthFlow so Back cannot return here.
+      await logout();
       onLogout?.();
     } catch {
       Alert.alert(t('dashboard.logOut'), t('dashboard.tryAgain'));
@@ -281,7 +269,7 @@ const AgencyProfileMenu: React.FC<Props> = ({
           icon="log-out"
           label={t('dashboard.logOut')}
           danger
-          onPress={logout}
+          onPress={logoutHandler}
           disabled={loggingOut}
         />
       </ScrollView>

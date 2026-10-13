@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../config/api';
 import { session } from './session';
+import { emitUnauthorized } from './authEvents';
 
 export class ApiError extends Error {
   status?: number;
@@ -52,6 +53,13 @@ export async function apiRequest<T>(
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    // Only protected requests that fail with 401 mean the persisted session is
+    // no longer valid. Unauthenticated calls (e.g. /login) must not trigger a
+    // global logout. The AuthContext turns this into a single logout, which
+    // also clears the invalid token so the next request does not 401 again.
+    if (response.status === 401 && authenticated) {
+      emitUnauthorized();
+    }
     throw new ApiError(
       payload.error ||
         payload.message ||
@@ -62,3 +70,4 @@ export async function apiRequest<T>(
   }
   return payload as T;
 }
+
