@@ -11,6 +11,13 @@ import SuperAdminNotificationsModal from '../../superAdmin/components/SuperAdmin
 import { notificationService } from '../../../services/notificationService';
 import type { AppNotification } from '../../../services/notificationService';
 import { playIncidentBuzzer } from '../../../services/notificationSound';
+import { useAuth } from '../../authentication/context/AuthContext';
+
+/** First uppercase letter of the authenticated user's name; "U" only when unavailable. */
+const userInitial = (name?: string | null) => {
+  const trimmed = (name ?? '').trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() : 'U';
+};
 
 type Props = {
   profileMenuOpen: boolean;
@@ -34,11 +41,13 @@ const AgencyTopNavigation: React.FC<Props> = ({
   onNotificationPress,
   onBeforeOpenNotifications,
   unreadNotificationCount = 0,
-  avatarInitials = 'SR',
+  avatarInitials,
   onNotificationSelect,
   enableIncidentBuzzer = true,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const resolvedAvatarInitials = avatarInitials || userInitial(user?.full_name);
   const isFocused = useIsFocused();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [internalUnreadCount, setInternalUnreadCount] = useState(0);
@@ -123,7 +132,7 @@ const AgencyTopNavigation: React.FC<Props> = ({
             accessibilityLabel={t('dashboard.myProfile')}
           >
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{avatarInitials}</Text>
+              <Text style={styles.avatarText}>{resolvedAvatarInitials}</Text>
               <View style={styles.online} />
             </View>
             <Feather

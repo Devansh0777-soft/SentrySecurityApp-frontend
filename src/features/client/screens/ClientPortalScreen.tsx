@@ -104,7 +104,7 @@ export default function ClientPortalScreen() {
         profileMenuOpen={profileMenuOpen}
         onProfilePress={() => setProfileMenuOpen(open => !open)}
         onNotificationOpen={() => setProfileMenuOpen(false)}
-        avatarInitials={(details?.full_name || 'C')
+        avatarInitials={(details?.full_name || 'U')
           .trim()
           .charAt(0)
           .toUpperCase()}
@@ -185,7 +185,7 @@ export default function ClientPortalScreen() {
           identity={{
             name: details?.full_name || t('client.profile'),
             company: details?.site_name || '',
-            initials: (details?.full_name || 'C')
+            initials: (details?.full_name || 'U')
               .trim()
               .charAt(0)
               .toUpperCase(),

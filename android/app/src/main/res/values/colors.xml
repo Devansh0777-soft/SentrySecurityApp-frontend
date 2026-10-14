@@ -1,0 +1,5 @@
+<resources>
+    <!-- Solid white backdrop for the adaptive launcher icon, matching the
+         white background used on the iOS icon and in the source logo. -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>

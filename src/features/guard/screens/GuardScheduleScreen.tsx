@@ -67,7 +67,7 @@ const GuardScheduleScreen = () => {
   const menuIdentity = {
     name: guard?.full_name || t('guard.common.guardFallback'),
     company: guard?.guard_code ? t('guard.common.badgeId', { id: guard.guard_code }) : '',
-    initials: (guard?.full_name || 'G').trim().charAt(0).toUpperCase(),
+    initials: (guard?.full_name || 'U').trim().charAt(0).toUpperCase(),
   };
 
   const onProfile = () => {
@@ -87,7 +87,7 @@ const GuardScheduleScreen = () => {
         <GuardTopNavigation
           profileMenuOpen={menuOpen}
           onProfilePress={() => setMenuOpen(o => !o)}
-          avatarInitials={(guard?.full_name || 'G').trim().charAt(0).toUpperCase()}
+          avatarInitials={(guard?.full_name || 'U').trim().charAt(0).toUpperCase()}
         />
         <View style={s.state}>
           <ActivityIndicator color={colors.primary} size="large" />
@@ -105,7 +105,7 @@ const GuardScheduleScreen = () => {
         <GuardTopNavigation
           profileMenuOpen={menuOpen}
           onProfilePress={() => setMenuOpen(o => !o)}
-          avatarInitials={(guard?.full_name || 'G').trim().charAt(0).toUpperCase()}
+          avatarInitials={(guard?.full_name || 'U').trim().charAt(0).toUpperCase()}
         />
         <View style={s.state}>
           <View style={s.errIcon}>
@@ -127,7 +127,7 @@ const GuardScheduleScreen = () => {
       <GuardTopNavigation
         profileMenuOpen={menuOpen}
         onProfilePress={() => setMenuOpen(o => !o)}
-        avatarInitials={(guard?.full_name || 'G').trim().charAt(0).toUpperCase()}
+        avatarInitials={(guard?.full_name || 'U').trim().charAt(0).toUpperCase()}
       />
       <ScrollView
         style={s.scroll}

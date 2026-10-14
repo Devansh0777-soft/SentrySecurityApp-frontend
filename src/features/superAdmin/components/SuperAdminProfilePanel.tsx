@@ -104,7 +104,7 @@ export default function SuperAdminProfilePanel({
     }
   };
 
-  const initial = (form.full_name || 'S').trim().charAt(0).toUpperCase();
+  const initial = (form.full_name || 'U').trim().charAt(0).toUpperCase();
 
   if (loading) {
     return (
@@ -120,19 +120,6 @@ export default function SuperAdminProfilePanel({
       <View style={s.profileHeader}>
         <View style={s.avatar}>
           <Text style={s.avatarText}>{initial}</Text>
-          <ScalePressable
-            style={s.camera}
-            onPress={() =>
-              Alert.alert(
-                t('superAdmin.profilePhoto'),
-                t('superAdmin.photoSoon'),
-              )
-            }
-            accessibilityRole="button"
-            accessibilityLabel={t('superAdmin.profilePhoto')}
-          >
-            <Feather name="camera" size={scaleFont(15)} color={colors.white} />
-          </ScalePressable>
         </View>
         <View style={s.identityCopy}>
           <Text style={s.name}>{form.full_name || 'Super Admin'}</Text>
@@ -262,19 +249,6 @@ const s = StyleSheet.create({
     color: '#B9640A',
     fontSize: scaleFont(typography.sizes.xxxl),
     fontWeight: typography.weights.bold,
-  },
-  camera: {
-    position: 'absolute',
-    right: -spacing.sm,
-    bottom: -spacing.xs,
-    width: scaleFont(34),
-    height: scaleFont(34),
-    borderRadius: scaleFont(17),
-    backgroundColor: '#B9640A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.white,
   },
   identityCopy: { flex: 1, gap: spacing.xs },
   name: {

@@ -12,6 +12,10 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../styles/colors';
 import { scaleWidth, scaleHeight, scaleFont } from '../../styles/dimensions';
+import {
+  INDIC_LINE_HEIGHT_RATIO,
+  scriptSafeText,
+} from '../../styles/typography';
 
 const LANGUAGES = [
   { code: 'en', shortLabel: '', label: 'English', nativeLabel: '' },
@@ -108,33 +112,51 @@ const LanguageSelector: React.FC = () => {
 
 const styles = StyleSheet.create({
   pill: {
+    // Anchor to the top-right of whatever row the host screen places us in.
+    // NOTE: vertical safe-area offset is intentionally NOT applied here — each
+    // host owns it exactly once (SafeAreaView edge or an absolute top inset).
+    // Applying insets.top here too would double the offset on screens that
+    // already use SafeAreaView edges={['top']}, pushing this button too low.
     alignSelf: 'flex-end',
+    // Keep a consistent right margin matching the screens' content gutter.
+    marginRight: scaleWidth(19),
     minWidth: scaleWidth(93),
+    // minHeight (not a fixed height) so the taller script-safe line box and the
+    // 20px icons always fit inside the pill instead of being clipped.
     minHeight: scaleHeight(44),
     paddingHorizontal: scaleWidth(10),
+    paddingVertical: scaleHeight(6),
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: 100,
-    justifyContent: 'center',
-    gap: scaleWidth(4),
+    gap: scaleWidth(6),
     zIndex: 2,
   },
   text: {
+    // The native-language labels (हिंदी, ਪੰਜਾਬੀ) carry Devanagari/Gurmukhi
+    // diacritics, so the line box needs headroom above the Latin-tuned 1.2x.
+    // `scriptSafeText` also disables Android's Latin-derived font padding.
+    ...scriptSafeText,
     fontSize: scaleFont(20),
     fontWeight: '700',
     color: colors.primary,
-    lineHeight: scaleFont(24),
+    lineHeight: Math.ceil(scaleFont(20) * INDIC_LINE_HEIGHT_RATIO),
   },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.25)',
     justifyContent: 'flex-start',
-    paddingHorizontal: scaleWidth(19),
+    // Match the pill's right gutter so the dropdown aligns under the button.
+    paddingRight: scaleWidth(19),
+    paddingLeft: scaleWidth(19),
     paddingTop: scaleHeight(72),
   },
   dropdown: {
+    // Sit directly beneath the pill instead of stretching full width.
+    alignSelf: 'flex-end',
     maxHeight: scaleHeight(320),
     backgroundColor: colors.white,
     borderWidth: 1,
@@ -155,22 +177,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shortLabel: {
+    ...scriptSafeText,
     width: scaleWidth(24),
     fontSize: scaleFont(20),
     fontWeight: '500',
     color: colors.primary,
+    lineHeight: Math.ceil(scaleFont(20) * INDIC_LINE_HEIGHT_RATIO),
   },
   optionText: {
+    ...scriptSafeText,
     marginLeft: scaleWidth(17),
     fontSize: scaleFont(20),
     fontWeight: '500',
     color: colors.primary,
+    lineHeight: Math.ceil(scaleFont(20) * INDIC_LINE_HEIGHT_RATIO),
   },
   nativeLabel: {
+    ...scriptSafeText,
     marginLeft: 'auto',
     fontSize: scaleFont(20),
     fontWeight: '500',
     color: colors.primary,
+    lineHeight: Math.ceil(scaleFont(20) * INDIC_LINE_HEIGHT_RATIO),
   },
   checkIcon: { marginLeft: 'auto' },
 });

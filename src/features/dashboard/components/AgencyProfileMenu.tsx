@@ -92,15 +92,19 @@ const Row = ({
 const AgencyProfileMenu: React.FC<Props> = ({
   onLogout,
   onMyProfile,
-  identity = {
-    name: 'Agency Admin',
-    company: 'Sentry Security Services',
-    initials: 'SR',
-  },
+  identity,
   hideIdentity = false,
 }) => {
   const { i18n, t } = useTranslation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  // Fall back to the authenticated user's name so the avatar shows their real
+  // initial; "U" is used only when no name is available.
+  const authName = (user?.full_name ?? '').trim();
+  const resolvedIdentity = identity ?? {
+    name: authName || 'Agency Admin',
+    company: 'Sentry Security Services',
+    initials: authName ? authName.charAt(0).toUpperCase() : 'U',
+  };
   const logoutPending = useRef(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const logoutHandler = async () => {
@@ -168,16 +172,16 @@ const AgencyProfileMenu: React.FC<Props> = ({
           <>
             <View style={styles.identity}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{identity.initials}</Text>
+                <Text style={styles.avatarText}>{resolvedIdentity.initials}</Text>
                 <View style={styles.online} />
               </View>
               <View style={styles.identityText}>
                 <Text style={styles.name} numberOfLines={1}>
-                  {identity.name}
+                  {resolvedIdentity.name}
                 </Text>
-                {identity.company ? (
+                {resolvedIdentity.company ? (
                   <Text style={styles.company} numberOfLines={1}>
-                    {identity.company}
+                    {resolvedIdentity.company}
                   </Text>
                 ) : null}
               </View>

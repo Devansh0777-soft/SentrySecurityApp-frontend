@@ -37,7 +37,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 
 export default function SuperAdminScreen() {
   const { t } = useTranslation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [tab, setTab] = useState<AdminTab>('agencies');
@@ -330,9 +330,11 @@ export default function SuperAdminScreen() {
       {profileMenuOpen ? (
         <AgencyProfileMenu
           identity={{
-            name: 'Super Admin',
+            name: (user?.full_name ?? '').trim() || 'Super Admin',
             company: 'Sentry Security Services',
-            initials: 'SA',
+            initials: ((user?.full_name ?? '').trim() || 'U')
+              .charAt(0)
+              .toUpperCase(),
           }}
           onMyProfile={() => {
             setTab('profile');

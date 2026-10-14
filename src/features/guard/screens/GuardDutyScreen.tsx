@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -35,6 +36,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { GuardStackParamList } from '../../../navigation/types';
 import { useDutyTimer } from '../hooks/useDutyTimer';
 import { useTranslation } from 'react-i18next';
+
+// Control room support line used by the phone button on the duty screen.
+const CONTROL_ROOM_NUMBER = '9464487068';
 
 const formatTime = (time?: string | null, notSetLabel?: string) => {
   if (!time) return notSetLabel ?? 'Schedule not set';
@@ -139,8 +143,6 @@ const GuardDutyScreen = () => {
     navigation.navigate('GuardDutyCapture', { mode: 'clock_in' });
   };
   const endDuty = () => navigation.navigate('GuardDutyCapture', { mode: 'clock_out' });
-  const showUnavailable = (label: string) =>
-    Alert.alert(label, t('guard.common.featureSoon'));
   const handleTab = (tab: GuardTab) => {
     setActiveTab(tab);
     if (tab === 'report') {
@@ -166,7 +168,7 @@ const GuardDutyScreen = () => {
       <GuardTopNavigation
         profileMenuOpen={profileMenuOpen}
         onProfilePress={() => setProfileMenuOpen(open => !open)}
-        avatarInitials={(guard?.full_name || 'G')
+        avatarInitials={(guard?.full_name || 'U')
           .trim()
           .charAt(0)
           .toUpperCase()}
@@ -260,10 +262,7 @@ const GuardDutyScreen = () => {
             </Text>
           </ScalePressable>
 
-          <Card
-            title={t('guard.duty.currentAssignment')}
-            action={() => showUnavailable(t('guard.duty.assignmentDetails'))}
-          >
+          <Card title={t('guard.duty.currentAssignment')}>
             <View style={styles.assignmentRow}>
               <IconBox icon="map-pin" />
               <View style={styles.flex}>
@@ -300,7 +299,7 @@ const GuardDutyScreen = () => {
               </View>
               <ScalePressable
                 style={styles.call}
-                onPress={() => showUnavailable(t('guard.duty.callControlRoom'))}
+                onPress={() => Linking.openURL(`tel:${CONTROL_ROOM_NUMBER}`)}
                 accessibilityLabel={t('guard.duty.callControlRoom')}
               >
                 <Feather
@@ -385,7 +384,7 @@ const GuardDutyScreen = () => {
             company: guard?.guard_code
               ? t('guard.common.badgeId', { id: guard.guard_code })
               : '',
-            initials: (guard?.full_name || 'G').trim().charAt(0).toUpperCase(),
+            initials: (guard?.full_name || 'U').trim().charAt(0).toUpperCase(),
           }}
           onMyProfile={() => {
             setProfileMenuOpen(false);

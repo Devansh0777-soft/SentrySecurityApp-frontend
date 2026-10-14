@@ -194,7 +194,7 @@ const GuardReportScreen = () => {
       <GuardTopNavigation
         profileMenuOpen={profileMenuOpen}
         onProfilePress={() => setProfileMenuOpen(open => !open)}
-        avatarInitials={(guard?.full_name || 'G')
+        avatarInitials={(guard?.full_name || 'U')
           .trim()
           .charAt(0)
           .toUpperCase()}
@@ -368,7 +368,7 @@ const GuardReportScreen = () => {
             company: guard?.guard_code
               ? t('guard.common.badgeId', { id: guard.guard_code })
               : '',
-            initials: (guard?.full_name || 'G').trim().charAt(0).toUpperCase(),
+            initials: (guard?.full_name || 'U').trim().charAt(0).toUpperCase(),
           }}
           onMyProfile={() => {
             setProfileMenuOpen(false);

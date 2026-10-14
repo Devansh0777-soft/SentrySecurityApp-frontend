@@ -189,7 +189,7 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
     if (tab === 'incidents') navigation.navigate('AgencyIncidents');
     if (tab === 'plan') navigation.navigate('AgencyPlan');
   };
-  const initial = (form.full_name || form.agency_name || 'A')
+  const initial = (form.full_name || 'U')
     .trim()
     .charAt(0)
     .toUpperCase();
@@ -291,19 +291,6 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
         <View style={s.profileHeader}>
           <View style={s.photo}>
             <Text style={s.initial}>{initial}</Text>
-            <ScalePressable
-              style={s.camera}
-              onPress={() =>
-                Alert.alert(
-                  t('dashboard.profilePhoto'),
-                  t('dashboard.photoUploadSoon'),
-                )
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('dashboard.profilePhoto')}
-            >
-              <Feather name="camera" size={f(19)} color={colors.white} />
-            </ScalePressable>
           </View>
           <View style={s.identity}>
             <Text style={s.name}>
@@ -598,19 +585,6 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   initial: { color: '#B9640A', fontSize: f(36), fontWeight: '700' },
-  camera: {
-    position: 'absolute',
-    right: -w(7),
-    bottom: -w(4),
-    width: w(34),
-    height: w(34),
-    borderRadius: w(17),
-    backgroundColor: '#B9640A',
-    borderWidth: w(3),
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   identity: { marginLeft: w(14), flex: 1 },
   name: { color: colors.primary, fontSize: f(27), fontWeight: '700' },
   accountId: { color: '#98A0AD', fontSize: f(16), marginTop: h(3) },

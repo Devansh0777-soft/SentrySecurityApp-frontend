@@ -13,6 +13,7 @@ import type {
 } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import Feather from 'react-native-vector-icons/Feather';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LanguageSelector from '../../../components/common/LanguageSelector';
@@ -22,12 +23,16 @@ import type {
 } from '../../../navigation/types';
 import { colors } from '../../../styles/colors';
 import { scaleWidth, scaleHeight, scaleFont } from '../../../styles/dimensions';
+import useOnboardingTextStyles from '../useOnboardingTextStyles';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Onboarding03'>;
 
 const Onboarding03Screen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  // Script-safe text metrics: widens the line box for Hindi/Punjabi so
+  // Devanagari/Gurmukhi diacritics are never clipped. Identical for English.
+  const textStyles = useOnboardingTextStyles();
 
   const finishOnboarding = () => {
     navigation
@@ -45,13 +50,18 @@ const Onboarding03Screen: React.FC<Props> = ({ navigation }) => {
         resizeMode="cover"
       />
 
+      {/* Positioned against the top safe-area inset so the button sits in the
+          upper-right corner below the status bar/notch on every device. */}
       <View style={[styles.langWrap, { top: insets.top + scaleHeight(8) }]}>
         <LanguageSelector />
       </View>
 
-      <Text style={styles.heading}>{t('onboarding.step3.title')}</Text>
-
-      <Text style={styles.subtitle}>{t('onboarding.step3.subtitle')}</Text>
+      <View style={styles.copyBlock}>
+        <Text style={textStyles.heading}>{t('onboarding.step3.title')}</Text>
+        <Text style={[styles.subtitle, textStyles.subtitle]}>
+          {t('onboarding.step3.subtitle')}
+        </Text>
+      </View>
 
       <View style={styles.dotsRow}>
         <View style={[styles.dot, styles.dotActive]} />
@@ -60,14 +70,14 @@ const Onboarding03Screen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <TouchableOpacity style={styles.skipWrapper} onPress={finishOnboarding}>
-        <Text style={styles.skipText}>{t('common.skip', 'Skip')}</Text>
+        <Text style={textStyles.skipText}>{t('common.skip', 'Skip')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.getStartedButton}
         onPress={finishOnboarding}
       >
-        <Text style={styles.getStartedText}>{t('common.getStarted')}</Text>
+        <Text style={textStyles.actionText}>{t('common.getStarted')}</Text>
         <Feather
           name="arrow-right"
           size={scaleFont(27)}
@@ -97,20 +107,22 @@ const styles = StyleSheet.create({
     width: scaleWidth(372),
     height: scaleHeight(364),
   },
-  heading: {
+  // Heading + subtitle flow inside this block instead of using two hard-coded
+  // absolute `top` offsets. Translated text that wraps to an extra line now
+  // pushes the subtitle down instead of overlapping the pagination dots.
+  copyBlock: {
     position: 'absolute',
     left: scaleWidth(22),
     top: scaleHeight(483),
     width: scaleWidth(380),
+  },
+  heading: {
     fontSize: scaleFont(42),
     fontWeight: '800',
     color: colors.primary,
     lineHeight: scaleFont(48),
   },
   subtitle: {
-    position: 'absolute',
-    left: scaleWidth(22),
-    top: scaleHeight(603),
     width: scaleWidth(355),
     fontSize: scaleFont(20),
     fontWeight: '400',
@@ -137,34 +149,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: scaleWidth(22),
     top: scaleHeight(795),
-  },
-  skipText: {
-    fontSize: scaleFont(24),
-    fontWeight: '600',
-    color: '#000000',
+    // Comfortable touch target that also fits the taller Indic line box.
+    minHeight: scaleHeight(44),
+    justifyContent: 'center',
+    paddingRight: scaleWidth(8),
   },
   getStartedButton: {
     position: 'absolute',
     left: scaleWidth(191),
     top: scaleHeight(785),
     width: scaleWidth(191),
-    height: scaleHeight(50),
+    // minHeight (not a fixed height) so the taller Indic line box always fits
+    // inside the button instead of being clipped.
+    minHeight: scaleHeight(50),
+    paddingHorizontal: scaleWidth(12),
     borderRadius: 15,
     backgroundColor: colors.primary,
-  },
-  getStartedText: {
-    position: 'absolute',
-    left: scaleWidth(13),
-    top: scaleHeight(10),
-    fontSize: scaleFont(24),
-    fontWeight: '600',
-    color: colors.white,
-    lineHeight: scaleFont(29),
+    // Centre the label/arrow rather than pinning them to fixed `top` offsets,
+    // which clipped translated labels.
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scaleWidth(8),
   },
   getStartedIcon: {
-    position: 'absolute',
-    left: scaleWidth(147),
-    top: scaleHeight(11),
     transform: [{ scaleX: 1.2 }],
   },
 });

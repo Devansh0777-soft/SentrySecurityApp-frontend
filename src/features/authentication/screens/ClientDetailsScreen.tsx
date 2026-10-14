@@ -13,6 +13,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LanguageSelector from '../../../components/common/LanguageSelector';
 import { INDIAN_STATES_AND_UNION_TERRITORIES } from '../../../constants/indianStates';
@@ -27,6 +28,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'ClientDetails'>;
 
 const ClientDetailsScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [companyName, setCompanyName] = useState('');
   const [siteName, setSiteName] = useState('');
   const [siteAddress, setSiteAddress] = useState('');
@@ -107,7 +109,14 @@ const ClientDetailsScreen: React.FC<Props> = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          // Only the in-flow LanguageSelector sits at the top of this content
+          // (back button + logo are absolutely positioned below), so a top
+          // inset here seats the button under the status bar without shifting
+          // the rest of the screen.
+          { paddingTop: insets.top + scaleHeight(8) },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled

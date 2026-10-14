@@ -13,6 +13,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LanguageSelector from '../../../components/common/LanguageSelector';
 import type { AuthStackParamList } from '../../../navigation/types';
@@ -39,6 +40,7 @@ const BUSINESS_TYPES = [
 
 const AgencyDetailsScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [agencyName, setAgencyName] = useState('');
   const [businessType, setBusinessType] = useState('');
   const [gstNumber, setGstNumber] = useState('');
@@ -220,7 +222,14 @@ const AgencyDetailsScreen: React.FC<Props> = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          // Only the in-flow LanguageSelector sits at the top of this content
+          // (back button + logo are absolutely positioned below), so a top
+          // inset here seats the button under the status bar without shifting
+          // the rest of the screen.
+          { paddingTop: insets.top + scaleHeight(8) },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -77,7 +76,7 @@ const GuardProfileScreen: React.FC<Props> = ({ navigation }) => {
     else if (tab === 'schedule') navigation.navigate('GuardSchedule');
   };
 
-  const initial = (profile?.full_name || 'G').trim().charAt(0).toUpperCase();
+  const initial = (profile?.full_name || 'U').trim().charAt(0).toUpperCase();
   const guardCode = profile?.guard_code || `SG-${profile?.id ?? '—'}`;
 
   return (
@@ -95,19 +94,6 @@ const GuardProfileScreen: React.FC<Props> = ({ navigation }) => {
         <View style={s.profileHeader}>
           <View style={s.photo}>
             <Text style={s.initial}>{initial}</Text>
-            <ScalePressable
-              style={s.camera}
-              onPress={() =>
-                Alert.alert(
-                  t('guardProfile.profilePhoto'),
-                  t('guardProfile.comingSoon'),
-                )
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('guardProfile.profilePhoto')}
-            >
-              <Feather name="camera" size={f(19)} color={colors.white} />
-            </ScalePressable>
           </View>
           <View style={s.identity}>
             <Text style={s.name} numberOfLines={1}>
@@ -256,19 +242,6 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   initial: { color: ACCENT, fontSize: f(36), fontWeight: '700' },
-  camera: {
-    position: 'absolute',
-    right: -w(7),
-    bottom: -w(4),
-    width: w(34),
-    height: w(34),
-    borderRadius: w(17),
-    backgroundColor: ACCENT,
-    borderWidth: w(3),
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   identity: { marginLeft: w(16), flex: 1 },
   name: { color: colors.primary, fontSize: f(27), fontWeight: '700' },
   role: {

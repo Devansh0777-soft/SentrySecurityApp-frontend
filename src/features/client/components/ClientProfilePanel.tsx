@@ -102,15 +102,12 @@ export default function ClientProfilePanel({
       setSaving(false);
     }
   };
-  const initial = (form.fullName || 'C').trim().charAt(0).toUpperCase();
+  const initial = (form.fullName || 'U').trim().charAt(0).toUpperCase();
   return (
     <View style={s.container}>
       <View style={s.profileHeader}>
         <View style={s.avatar}>
           <Text style={s.avatarText}>{initial}</Text>
-          <View style={s.camera}>
-            <Feather name="camera" size={scaleFont(15)} color={colors.white} />
-          </View>
         </View>
         <View style={s.identity}>
           <Text style={s.name}>{form.fullName}</Text>
@@ -265,19 +262,6 @@ const s = StyleSheet.create({
     color: '#B9640A',
     fontSize: scaleFont(typography.sizes.xxxl),
     fontWeight: typography.weights.bold,
-  },
-  camera: {
-    position: 'absolute',
-    right: -spacing.sm,
-    bottom: -spacing.xs,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#B9640A',
-    borderWidth: 3,
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   identity: { flex: 1, gap: spacing.xs },
   name: {
