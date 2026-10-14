@@ -4,6 +4,13 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+
+        <!-- Cold-start window: plain white with NO icon, so the OS surface
+             blends straight into the branded React Native boot splash
+             (logo + yellow progress bar) instead of flashing a default
+             app-icon screen first. Launcher icons are untouched. -->
+        <item name="android:windowBackground">@color/splash_window_background</item>
+        <item name="android:windowDisablePreview">false</item>
     </style>
 
 </resources>

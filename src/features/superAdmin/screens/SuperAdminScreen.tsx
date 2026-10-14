@@ -27,7 +27,14 @@ import SuperAdminAgencyEditorModal, {
 import SuperAdminNotificationsModal from '../components/SuperAdminNotificationsModal';
 import ScalePressable from '../../../components/common/ScalePressable';
 import { useAuth } from '../../authentication/context/AuthContext';
-import { superAdminService } from '../../../services/superAdminService';
+import {
+  takeSlot,
+  awaitBootPrefetch,
+} from '../../../services/bootPrefetch';
+import {
+  superAdminService,
+  type AgencyRecord,
+} from '../../../services/superAdminService';
 import { notificationService } from '../../../services/notificationService';
 import { colors } from '../../../styles/colors';
 import { typography } from '../../../styles/typography';
@@ -57,9 +64,23 @@ export default function SuperAdminScreen() {
     setListLoading(true);
     setListError('');
     try {
-      const records = await superAdminService.getAgencies();
+      // First mount joins this session's boot prefetch flight: await the
+      // shared promise (already settled in the normal case), then take the
+      // slot. Refreshes and cache-misses fetch live.
+      let records = takeSlot<AgencyRecord[]>('agencies');
+      if (records === undefined) {
+        try {
+          await awaitBootPrefetch();
+        } catch {
+          // Fall through to the live fetch below.
+        }
+        records = takeSlot<AgencyRecord[]>('agencies');
+      }
+      const live =
+        records ??
+        (await superAdminService.getAgencies());
       setAgencies(
-        records
+        live
           .filter(item => ['approved', 'inactive'].includes(item.status))
           .map(item => ({
             id: String(item.id),

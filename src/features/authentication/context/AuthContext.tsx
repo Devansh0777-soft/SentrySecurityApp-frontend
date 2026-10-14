@@ -11,6 +11,12 @@ import { authService } from '../../../services/authService';
 import { session, type StoredUser } from '../../../services/session';
 import { isTokenExpired } from '../../../services/jwt';
 import { onUnauthorized } from '../../../services/authEvents';
+import {
+  primeBootPrefetch,
+  awaitBootPrefetch,
+  clearBootPrefetch,
+  type BootAccountType,
+} from '../../../services/bootPrefetch';
 
 type LoginArgs = { identifier: string; password: string };
 
@@ -100,19 +106,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // The navigation reset is driven by AppNavigator reacting to auth state,
     // which avoids racing the NavigationContainer's readiness.
     setAuthenticated(null);
+    // Drop boot-prefetched data so a different login never sees stale cache.
+    clearBootPrefetch();
   }, []);
 
-  // Initial session restoration on first mount.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      await restoreSession();
-      if (!cancelled) setIsLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [restoreSession]);
+/**
+ * Boot orchestration on first mount:
+ *  1. Restore the session from persistent storage (offline-safe: validity is
+ *     decided by decoding the stored JWT locally, so a dead network never
+ *     deletes a potentially-valid session).
+ *  2. In parallel, prefetch the authenticated role's essential dashboard
+ *     data via the same service calls the screens use (no duplicates).
+ *  3. Hold the splash for its ~2s minimum, and longer if the prefetch is
+ *     still in flight (capped by the prefetch timeout).
+ */
+const BOOT_MIN_MS = 2000;
+const toBootAccount = (accountType?: string | null): BootAccountType => {
+  switch (accountType) {
+    case 'guard':
+      return 'guard';
+    case 'client':
+      return 'client';
+    case 'superAdmin':
+      return 'superAdmin';
+    default:
+      return 'agency';
+  }
+};
+
 
   // Centralised handling of an invalidated session (protected request 401).
   useEffect(() => {
@@ -121,6 +142,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       logout();
     });
   }, [logout]);
+
+  // Cold-start boot: restore session + prefetch the role's dashboard data in
+  // parallel, then release the splash gate. The gate releases only when BOTH
+  // the ~2s splash minimum AND the (timeout-capped) prefetch finish — fast
+  // boots still show the full progress bar; slow networks hold the splash.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const timer = new Promise<void>(resolve =>
+        setTimeout(() => resolve(), BOOT_MIN_MS),
+      );
+      const work = (async () => {
+        const restored = await restoreSession();
+        if (restored) {
+          try {
+            const stored = await session.getAuth();
+            const accountType = toBootAccount(stored?.user?.account_type);
+            await primeBootPrefetch(accountType);
+            await awaitBootPrefetch();
+          } catch {
+            // Prefetch is best-effort: dashboards fall back to their own
+            // fetch and error UI.
+          }
+        } else {
+          clearBootPrefetch();
+        }
+      })();
+      await Promise.all([work, timer]);
+      if (!cancelled) setIsLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [restoreSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

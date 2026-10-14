@@ -36,6 +36,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { GuardStackParamList } from '../../../navigation/types';
 import { useDutyTimer } from '../hooks/useDutyTimer';
 import { useTranslation } from 'react-i18next';
+import {
+  takeSlot,
+  awaitBootPrefetch,
+} from '../../../services/bootPrefetch';
 
 // Control room support line used by the phone button on the duty screen.
 const CONTROL_ROOM_NUMBER = '9464487068';
@@ -70,15 +74,33 @@ const GuardDutyScreen = () => {
   const load = useCallback(async () => {
     try {
       setError('');
-      const [details, status, logs] = await Promise.all([
-        guardService.getDutyDetails(),
-        guardService.getDutyStatus(),
-        // The photo log is supporting information — never block the dashboard.
-        guardService.getDutyHistory().catch(() => [] as GuardDutyLog[]),
-      ]);
+      // First mount joins this session's boot prefetch flight: await the
+      // shared promise (already settled in the normal case), then take the
+      // slots. Refreshes and cache-misses fall through to a normal fetch.
+      let details = takeSlot<GuardDutyDetails>('guardDetails');
+      let status = takeSlot<GuardDutyStatus>('guardStatus');
+      let logs = takeSlot<GuardDutyLog[]>('guardLogs');
+      if (details === undefined || status === undefined) {
+        try {
+          await awaitBootPrefetch();
+        } catch {
+          // Fall through to the screen's own fetch below.
+        }
+        details = takeSlot<GuardDutyDetails>('guardDetails');
+        status = takeSlot<GuardDutyStatus>('guardStatus');
+        logs = takeSlot<GuardDutyLog[]>('guardLogs');
+      }
+      if (details === undefined || status === undefined) {
+        [details, status, logs] = await Promise.all([
+          guardService.getDutyDetails(),
+          guardService.getDutyStatus(),
+          // The photo log is supporting information — never block the dashboard.
+          guardService.getDutyHistory().catch(() => [] as GuardDutyLog[]),
+        ]);
+      }
       setGuard(details);
       setDuty(status);
-      setDutyLogs(logs);
+      setDutyLogs(logs ?? []);
     } catch (loadError) {
       setError(
         loadError instanceof Error

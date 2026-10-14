@@ -12,6 +12,10 @@ import { notificationService } from '../../../services/notificationService';
 import type { AppNotification } from '../../../services/notificationService';
 import { playIncidentBuzzer } from '../../../services/notificationSound';
 import { useAuth } from '../../authentication/context/AuthContext';
+import {
+  takeSlot,
+  awaitBootPrefetch,
+} from '../../../services/bootPrefetch';
 
 /** First uppercase letter of the authenticated user's name; "U" only when unavailable. */
 const userInitial = (name?: string | null) => {
@@ -57,20 +61,26 @@ const AgencyTopNavigation: React.FC<Props> = ({
   useEffect(() => {
     if (!managesNotifications || !isFocused) return;
     let active = true;
-    const refresh = () => {
+    // Incident buzzer is driven ONLY by sound-pending poll below;
+    // keep the badge count here but never play sound from it.
+    const refreshLive = () => {
       notificationService
         .getUnreadCount()
         .then(response => {
           if (!active) return;
-          // Incident buzzer is driven ONLY by sound-pending poll below;
-          // keep the badge count here but never play sound from it.
           lastUnreadCount.current = response.count;
           setInternalUnreadCount(response.count);
         })
         .catch(() => {
           if (active) setInternalUnreadCount(0);
         });
-      // Agency incident buzzer: backend sets sound_pending at 0/5/10/15 min
+    };
+    // First mount joins this session's boot prefetch flight: the unread
+    // count usually arrives with the dashboard cache, so the badge hydrates
+    // without an extra request. Later mounts fetch live as before.
+    let bootJoined = false;
+    const pollBuzzer = () => {
+      // Incident buzzer: backend sets sound_pending at 0/5/10/15 min
       // after a guard files an incident; this poll consumes the flag and
       // plays the bundled buzzer exactly once per tick. Acknowledging the
       // incident clears the flag chain so the buzzer stops. Guard and client
@@ -83,6 +93,37 @@ const AgencyTopNavigation: React.FC<Props> = ({
           },
           () => undefined,
         );
+      }
+    };
+    const refresh = () => {
+      const cached = takeSlot<{ count: number }>('unreadCount');
+      if (cached && typeof cached.count === 'number') {
+        lastUnreadCount.current = cached.count;
+        setInternalUnreadCount(cached.count);
+        pollBuzzer();
+      } else if (!bootJoined) {
+        bootJoined = true;
+        awaitBootPrefetch().then(
+          () => {
+            if (!active) return;
+            const late = takeSlot<{ count: number }>('unreadCount');
+            if (late && typeof late.count === 'number') {
+              lastUnreadCount.current = late.count;
+              setInternalUnreadCount(late.count);
+            } else {
+              refreshLive();
+            }
+            pollBuzzer();
+          },
+          () => {
+            if (!active) return;
+            refreshLive();
+            pollBuzzer();
+          },
+        );
+      } else {
+        refreshLive();
+        pollBuzzer();
       }
     };
     refresh();

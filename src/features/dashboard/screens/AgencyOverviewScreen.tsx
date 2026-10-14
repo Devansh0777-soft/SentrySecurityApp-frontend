@@ -35,6 +35,10 @@ import {
   type AgencySite,
 } from '../../../services/agencyApiService';
 import {
+  takeSlot,
+  awaitBootPrefetch,
+} from '../../../services/bootPrefetch';
+import {
   payrollService,
   formatINR,
   type PayrollSummary,
@@ -49,6 +53,20 @@ const currentPeriod = (): string => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 };
+
+type AgencyResults = [
+  PromiseSettledResult<AgencySite[]>,
+  PromiseSettledResult<AgencyGuard[]>,
+  PromiseSettledResult<AgencyIncident[]>,
+  PromiseSettledResult<{ summary: PayrollSummary; period: string }>,
+  PromiseSettledResult<AgencyInvoice[]>,
+  PromiseSettledResult<AgencyRatingSummary>,
+];
+
+const ok = <T,>(value: T): PromiseFulfilledResult<T> => ({
+  status: 'fulfilled',
+  value,
+});
 
 const monthLabel = (period: string, locale: string): string => {
   const [year, month] = period.split('-').map(Number);
@@ -113,14 +131,92 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
   const load = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     const period = currentPeriod();
-    const results = await Promise.allSettled([
-      agencyApiService.getSites(),
-      agencyApiService.getGuards(),
-      agencyApiService.getIncidents(),
-      payrollService.getOverview(period),
-      invoiceService.getAgencyInvoices(),
-      agencyApiService.getRatings(),
-    ]);
+    // First mount joins this session's boot prefetch flight: await the
+    // shared promise (already settled in the normal case), then take the
+    // slots as settled results. Refreshes rerun the live fetch directly.
+    let results: AgencyResults;
+    const cached: [
+      AgencySite[] | undefined,
+      AgencyGuard[] | undefined,
+      AgencyIncident[] | undefined,
+      { summary: PayrollSummary; period: string } | undefined,
+      AgencyInvoice[] | undefined,
+      AgencyRatingSummary | undefined,
+    ] = [
+      takeSlot<AgencySite[]>('sites'),
+      takeSlot<AgencyGuard[]>('guards'),
+      takeSlot<AgencyIncident[]>('incidents'),
+      takeSlot<{ summary: PayrollSummary; period: string }>('payroll'),
+      takeSlot<AgencyInvoice[]>('invoices'),
+      takeSlot<AgencyRatingSummary>('ratings'),
+    ];
+    const [cSites, cGuards, cIncidents, cPayroll, cInvoices, cRatings] = cached;
+    if (
+      cSites !== undefined &&
+      cGuards !== undefined &&
+      cIncidents !== undefined &&
+      cPayroll !== undefined &&
+      cInvoices !== undefined &&
+      cRatings !== undefined
+    ) {
+      results = [
+        ok(cSites),
+        ok(cGuards),
+        ok(cIncidents),
+        ok(cPayroll),
+        ok(cInvoices),
+        ok(cRatings),
+      ];
+    } else {
+      try {
+        await awaitBootPrefetch();
+      } catch {
+        // Fall through to the live fetch below.
+      }
+      const recheck: [
+        AgencySite[] | undefined,
+        AgencyGuard[] | undefined,
+        AgencyIncident[] | undefined,
+        { summary: PayrollSummary; period: string } | undefined,
+        AgencyInvoice[] | undefined,
+        AgencyRatingSummary | undefined,
+      ] = [
+        takeSlot<AgencySite[]>('sites'),
+        takeSlot<AgencyGuard[]>('guards'),
+        takeSlot<AgencyIncident[]>('incidents'),
+        takeSlot<{ summary: PayrollSummary; period: string }>('payroll'),
+        takeSlot<AgencyInvoice[]>('invoices'),
+        takeSlot<AgencyRatingSummary>('ratings'),
+      ];
+      const [rSites, rGuards, rIncidents, rPayroll, rInvoices, rRatings] =
+        recheck;
+      if (
+        rSites !== undefined &&
+        rGuards !== undefined &&
+        rIncidents !== undefined &&
+        rPayroll !== undefined &&
+        rInvoices !== undefined &&
+        rRatings !== undefined
+      ) {
+        results = [
+          ok(rSites),
+          ok(rGuards),
+          ok(rIncidents),
+          ok(rPayroll),
+          ok(rInvoices),
+          ok(rRatings),
+        ];
+      } else {
+        results = await Promise.allSettled([
+          agencyApiService.getSites(),
+          agencyApiService.getGuards(),
+          agencyApiService.getIncidents(),
+          payrollService.getOverview(period),
+          invoiceService.getAgencyInvoices(),
+          agencyApiService.getRatings(),
+        ]);
+      }
+    }
     // Ignore an obsolete response when a newer request has already started
     // (fast focus switches, retry while a request is in flight).
     if (requestIdRef.current !== requestId) return;

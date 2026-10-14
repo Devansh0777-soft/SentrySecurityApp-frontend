@@ -32,6 +32,10 @@ import {
   type CoverageRequest,
 } from '../../../services/clientService';
 import { useAuth } from '../../authentication/context/AuthContext';
+import {
+  takeSlot,
+  awaitBootPrefetch,
+} from '../../../services/bootPrefetch';
 import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
@@ -54,10 +58,26 @@ export default function ClientPortalScreen() {
     setLoading(true);
     setError('');
     try {
-      const [clientDetails, requests] = await Promise.all([
-        clientService.getDetails(),
-        clientService.getCoverageRequests(),
-      ]);
+      // First mount joins this session's boot prefetch flight: await the
+      // shared promise (already settled in the normal case), then take the
+      // slots. Refreshes and cache-misses fall through to a normal fetch.
+      let clientDetails = takeSlot<ClientDetails>('clientDetails');
+      let requests = takeSlot<CoverageRequest[]>('clientCoverage');
+      if (clientDetails === undefined || requests === undefined) {
+        try {
+          await awaitBootPrefetch();
+        } catch {
+          // Fall through to the screen's own fetch below.
+        }
+        clientDetails = takeSlot<ClientDetails>('clientDetails');
+        requests = takeSlot<CoverageRequest[]>('clientCoverage');
+      }
+      if (clientDetails === undefined || requests === undefined) {
+        [clientDetails, requests] = await Promise.all([
+          clientService.getDetails(),
+          clientService.getCoverageRequests(),
+        ]);
+      }
       setDetails(clientDetails);
       setCoverageRequests(requests);
     } catch (loadError) {
