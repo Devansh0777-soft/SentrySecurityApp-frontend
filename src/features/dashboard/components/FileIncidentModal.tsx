@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +38,15 @@ const FileIncidentModal: React.FC<Props> = ({
   onCreated,
 }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  // Usable height below the notch/status bar and above the home indicator.
+  // Sized from window height minus live insets so it adapts to Dynamic
+  // Island, Android edge-to-edge status bars, and rotation — no fixed margin.
+  const maxSheetHeight = Math.max(
+    320,
+    windowHeight - insets.top - insets.bottom - scaleHeight(48),
+  );
   const [sites, setSites] = useState<AgencySite[]>([]);
   const [site, setSite] = useState<AgencySite | null>(null);
   const [siteOpen, setSiteOpen] = useState(false);
@@ -95,7 +108,15 @@ const FileIncidentModal: React.FC<Props> = ({
         animationType="fade"
         onRequestClose={close}
       >
-        <View style={s.overlay}>
+        <View
+          style={[
+            s.overlay,
+            {
+              paddingTop: insets.top + scaleHeight(12),
+              paddingBottom: insets.bottom + scaleHeight(12),
+            },
+          ]}
+        >
           <View style={s.successSheet}>
             <TouchableOpacity style={s.successClose} onPress={close}>
               <Feather name="x" size={scaleFont(29)} color="#000" />
@@ -134,15 +155,32 @@ const FileIncidentModal: React.FC<Props> = ({
       animationType="fade"
       onRequestClose={close}
     >
-      <View style={s.overlay}>
-        <View style={s.sheet}>
-          <View style={s.titleRow}>
-            <Text style={s.title}>{t('dashboard.fileIncident')}</Text>
-            <TouchableOpacity style={s.close} onPress={close}>
-              <Feather name="x" size={scaleFont(29)} color="#000" />
-            </TouchableOpacity>
-          </View>
-          <Text style={s.label}>{t('dashboard.site')}</Text>
+      <View
+        style={[
+          s.overlay,
+          {
+            paddingTop: insets.top + scaleHeight(12),
+            paddingBottom: insets.bottom + scaleHeight(12),
+          },
+        ]}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={s.keyboard}
+        >
+          <View style={[s.sheet, { maxHeight: maxSheetHeight }]}>
+            <View style={s.titleRow}>
+              <Text style={s.title}>{t('dashboard.fileIncident')}</Text>
+              <TouchableOpacity style={s.close} onPress={close}>
+                <Feather name="x" size={scaleFont(29)} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={s.scrollContent}
+            >
+              <Text style={s.label}>{t('dashboard.site')}</Text>
           <View style={s.siteSelector}>
             <ScalePressable
               style={s.select}
@@ -247,7 +285,9 @@ const FileIncidentModal: React.FC<Props> = ({
               {submitting ? t('dashboard.filing') : t('dashboard.fileIncident')}
             </Text>
           </ScalePressable>
-        </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -260,11 +300,20 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: scaleWidth(18),
   },
+  keyboard: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sheet: {
     width: '100%',
     backgroundColor: colors.white,
     borderRadius: scaleWidth(8),
     padding: scaleWidth(19),
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: scaleHeight(4),
   },
   titleRow: {
     flexDirection: 'row',

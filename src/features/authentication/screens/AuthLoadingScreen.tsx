@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Image, Animated, StyleSheet, StatusBar } from 'react-native';
+import {
+  View,
+  Image,
+  Animated,
+  StyleSheet,
+  StatusBar,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../styles/colors';
 import { scaleWidth, scaleHeight } from '../../../styles/dimensions';
 
@@ -36,7 +44,10 @@ const AuthLoadingScreen: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={Platform.OS === 'ios' ? ['top', 'bottom'] : []}
+    >
       <StatusBar barStyle="dark-content" />
 
       <Image
@@ -50,7 +61,7 @@ const AuthLoadingScreen: React.FC = () => {
           style={[styles.progressFill, { width: progressWidth }]}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

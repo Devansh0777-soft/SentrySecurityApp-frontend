@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   agencyApiService,
@@ -27,6 +32,15 @@ type Props = {
 
 const AddSiteModal: React.FC<Props> = ({ visible, onClose, onCreated }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  // Keep the whole sheet below the notch/status bar and above the home
+  // indicator on both platforms; derives from live insets + window height so
+  // small phones, large phones, and rotation are all handled.
+  const maxSheetHeight = Math.max(
+    320,
+    windowHeight - insets.top - insets.bottom - scaleHeight(48),
+  );
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [plan, setPlan] = useState('day_shift');
@@ -69,15 +83,32 @@ const AddSiteModal: React.FC<Props> = ({ visible, onClose, onCreated }) => {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={s.overlay}>
-        <View style={s.sheet}>
-          <View style={s.titleRow}>
-            <Text style={s.title}>{t('dashboard.addSite')}</Text>
-            <TouchableOpacity style={s.close} onPress={onClose}>
-              <Feather name="x" size={scaleFont(29)} color="#000" />
-            </TouchableOpacity>
-          </View>
-          <Label text={t('dashboard.siteName')} required />
+      <View
+        style={[
+          s.overlay,
+          {
+            paddingTop: insets.top + scaleHeight(12),
+            paddingBottom: insets.bottom + scaleHeight(12),
+          },
+        ]}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={s.keyboard}
+        >
+          <View style={[s.sheet, { maxHeight: maxSheetHeight }]}>
+            <View style={s.titleRow}>
+              <Text style={s.title}>{t('dashboard.addSite')}</Text>
+              <TouchableOpacity style={s.close} onPress={onClose}>
+                <Feather name="x" size={scaleFont(29)} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={s.scrollContent}
+            >
+              <Label text={t('dashboard.siteName')} required />
           <Input
             value={name}
             onChangeText={setName}
@@ -136,7 +167,9 @@ const AddSiteModal: React.FC<Props> = ({ visible, onClose, onCreated }) => {
               {saving ? t('dashboard.saving') : t('dashboard.saveSite')}
             </Text>
           </TouchableOpacity>
-        </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -184,11 +217,20 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: scaleWidth(18),
   },
+  keyboard: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sheet: {
     width: '100%',
     backgroundColor: colors.white,
     borderRadius: scaleWidth(8),
     padding: scaleWidth(19),
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: scaleHeight(4),
   },
   titleRow: {
     flexDirection: 'row',
