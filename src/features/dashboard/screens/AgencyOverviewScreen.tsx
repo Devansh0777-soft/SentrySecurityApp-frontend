@@ -466,7 +466,7 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
                 text={t('dashboard.addGuard')}
                 color="#0EAA55"
                 onPress={() =>
-                  navigation.navigate('AgencyGuards', { openAddGuard: true })
+                  navigation.navigate('AddGuardScreen')
                 }
               />
               <Action
@@ -474,7 +474,7 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
                 text={t('dashboard.addSite')}
                 color="#F39A00"
                 onPress={() =>
-                  navigation.navigate('AgencySites', { openAddSite: true })
+                  navigation.navigate('AddSiteScreen')
                 }
               />
               <Action

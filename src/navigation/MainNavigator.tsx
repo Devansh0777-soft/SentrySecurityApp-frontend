@@ -11,6 +11,8 @@ import AgencyInvoicesScreen from '../features/dashboard/screens/AgencyInvoicesSc
 import AgencyPayrollScreen from '../features/dashboard/screens/AgencyPayrollScreen';
 import AgencyPayrollDetailsScreen from '../features/dashboard/screens/AgencyPayrollDetailsScreen';
 import AgencyEventDetailsScreen from '../features/dashboard/screens/AgencyEventDetailsScreen';
+import AddGuardScreen from '../features/dashboard/screens/AddGuardScreen';
+import AddSiteScreen from '../features/dashboard/screens/AddSiteScreen';
 
 import { MainStackParamList } from './types';
 
@@ -39,6 +41,8 @@ const MainNavigator = () => {
         name="AgencyEventDetails"
         component={AgencyEventDetailsScreen}
       />
+      <Stack.Screen name="AddGuardScreen" component={AddGuardScreen} />
+      <Stack.Screen name="AddSiteScreen" component={AddSiteScreen} />
     </Stack.Navigator>
   );
 };

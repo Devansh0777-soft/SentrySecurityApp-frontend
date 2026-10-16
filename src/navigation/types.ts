@@ -32,6 +32,8 @@ export type MainStackParamList = {
   AgencyPayroll: undefined;
   AgencyPayrollDetails: { guardId: number; period: string };
   AgencyEventDetails: { siteId: number };
+  AddGuardScreen: undefined;
+  AddSiteScreen: undefined;
 };
 
 export type GuardSectionKey =

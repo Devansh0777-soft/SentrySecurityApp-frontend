@@ -39,9 +39,7 @@ import { usePlanUsage } from '../hooks/usePlanUsage';
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyGuards'>;
 type Filter = 'all' | 'on_duty' | 'off_duty';
 
-const AgencyGuardsScreen: React.FC<Props> = ({ navigation, route }) => {
-  const [addingGuard, setAddingGuard] = useState(false);
-  const [goBackOnClose, setGoBackOnClose] = useState(false);
+const AgencyGuardsScreen: React.FC<Props> = ({ navigation }) => {
   const { t } = useTranslation();
   const {
     planName,
@@ -70,16 +68,8 @@ const AgencyGuardsScreen: React.FC<Props> = ({ navigation, route }) => {
       );
       return;
     }
-    setAddingGuard(true);
+    navigation.navigate('AddGuardScreen');
   }, [guardsAtLimit, guardLimit, planName, navigation, t]);
-
-  useEffect(() => {
-    if (route.params?.openAddGuard) {
-      setGoBackOnClose(true);
-      navigation.setParams({ openAddGuard: false });
-      requestAddGuard();
-    }
-  }, [route.params?.openAddGuard, navigation, requestAddGuard]);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [guards, setGuards] = useState<AgencyGuard[]>([]);
   const [query, setQuery] = useState('');
@@ -229,22 +219,6 @@ const AgencyGuardsScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
       </ScrollView>
       <AgencyBottomNavigation activeTab="guards" onTabPress={navigate} />
-      <AddGuardModal
-        visible={addingGuard}
-        onClose={() => {
-          if (goBackOnClose) {
-            navigation.goBack();
-          } else {
-            setAddingGuard(false);
-          }
-        }}
-        onCreated={() => {
-          setQuery('');
-          setFilter('all');
-          loadGuards();
-          refreshPlanUsage();
-        }}
-      />
       <AddGuardModal
         visible={selectedGuard !== null}
         guard={selectedGuard}

@@ -26,7 +26,6 @@ import AgencyBottomNavigation, {
 } from '../components/AgencyBottomNavigation';
 import AgencyProfileMenu from '../components/AgencyProfileMenu';
 import AgencyTopNavigation from '../components/AgencyTopNavigation';
-import AddSiteModal from '../components/AddSiteModal';
 import {
   agencyApiService,
   type AgencySite,
@@ -43,8 +42,6 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [siteItems, setSiteItems] = useState<AgencySite[]>([]);
-  const [addSiteOpen, setAddSiteOpen] = useState(false);
-  const [goBackOnClose, setGoBackOnClose] = useState(false);
   const [selectedSite, setSelectedSite] = useState<AgencySite | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -95,21 +92,13 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
       );
       return;
     }
-    setAddSiteOpen(true);
+    navigation.navigate('AddSiteScreen');
   }, [sitesAtLimit, siteLimit, planName, navigation, t]);
 
   const handleSitesChanged = useCallback(() => {
     loadSites();
     refreshPlanUsage();
   }, [loadSites, refreshPlanUsage]);
-
-  useEffect(() => {
-    if (route.params?.openAddSite) {
-      setGoBackOnClose(true);
-      navigation.setParams({ openAddSite: undefined });
-      requestAddSite();
-    }
-  }, [navigation, route.params?.openAddSite, requestAddSite]);
   useEffect(() => {
     if (route.params?.openRequestId) setSection('requests');
   }, [route.params?.openRequestId]);
@@ -266,17 +255,6 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
           onLogout={() => setProfileMenuOpen(false)}
         />
       ) : null}
-      <AddSiteModal
-        visible={addSiteOpen}
-        onClose={() => {
-          if (goBackOnClose) {
-            navigation.goBack();
-          } else {
-            setAddSiteOpen(false);
-          }
-        }}
-        onCreated={handleSitesChanged}
-      />
       <EditSiteModal
         visible={selectedSite !== null}
         site={selectedSite}
