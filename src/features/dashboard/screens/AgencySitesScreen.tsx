@@ -44,6 +44,7 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
   const [query, setQuery] = useState('');
   const [siteItems, setSiteItems] = useState<AgencySite[]>([]);
   const [addSiteOpen, setAddSiteOpen] = useState(false);
+  const [goBackOnClose, setGoBackOnClose] = useState(false);
   const [selectedSite, setSelectedSite] = useState<AgencySite | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -104,6 +105,7 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     if (route.params?.openAddSite) {
+      setGoBackOnClose(true);
       navigation.setParams({ openAddSite: undefined });
       requestAddSite();
     }
@@ -266,7 +268,13 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
       ) : null}
       <AddSiteModal
         visible={addSiteOpen}
-        onClose={() => setAddSiteOpen(false)}
+        onClose={() => {
+          if (goBackOnClose) {
+            navigation.goBack();
+          } else {
+            setAddSiteOpen(false);
+          }
+        }}
         onCreated={handleSitesChanged}
       />
       <EditSiteModal

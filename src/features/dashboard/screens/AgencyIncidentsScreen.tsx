@@ -61,6 +61,7 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [fileModalOpen, setFileModalOpen] = useState(
     route.params?.openFileIncident ?? false,
   );
+  const [goBackOnClose, setGoBackOnClose] = useState(false);
   const [incidents, setIncidents] = useState<AgencyIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -82,6 +83,7 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [t]);
   useEffect(() => {
     if (route.params?.openFileIncident) {
+      setGoBackOnClose(true);
       setFileModalOpen(true);
       navigation.setParams({ openFileIncident: undefined });
     }
@@ -149,7 +151,7 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
           onPress={() => setFileModalOpen(true)}
           accessibilityRole="button"
         >
-          <Text style={s.fileText}>+ {t('dashboard.fileIncident')}</Text>
+          <Text style={s.fileText}>{t('dashboard.fileIncident')}</Text>
         </ScalePressable>
         <View style={s.filters}>
           {(['All', 'HIGH', 'MEDIUM', 'LOW'] as const).map(item => (
@@ -218,7 +220,13 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
       ) : null}
       <FileIncidentModal
         visible={fileModalOpen}
-        onClose={() => setFileModalOpen(false)}
+        onClose={() => {
+          if (goBackOnClose) {
+            navigation.goBack();
+          } else {
+            setFileModalOpen(false);
+          }
+        }}
         onCreated={loadIncidents}
       />
       <IncidentStatusModal

@@ -149,6 +149,8 @@ const en = {
       mobileNumber: 'Mobile number',
       email: 'Email',
       password: 'Password',
+      passwordHelper:
+        'Password must be at least 8 characters and contain uppercase letters (A–Z), lowercase letters (a–z), and numbers (0–9).',
       joiningDate: 'Joining date',
       address: 'Address (optional)',
       age: 'Age (optional)',
@@ -185,6 +187,8 @@ const en = {
       contactError:
         'Enter a valid 10-digit Indian mobile, email and password of at least 6 characters.',
       dateError: 'Enter a valid joining date as YYYY-MM-DD.',
+      passwordError:
+        'Password must be at least 8 characters and contain uppercase letters (A–Z), lowercase letters (a–z), and numbers (0–9).',
       ageError: 'Age must be a whole number between 18 and 65.',
       salaryError:
         'Enter a non-negative salary and allowances with up to two decimal places.',
@@ -525,7 +529,7 @@ const en = {
       checkpointsTitle: 'Patrol checkpoints',
       checkpointsHint: 'Add the checkpoints the assigned guard must visit, in order.',
       checkpointPlaceholder: 'e.g. Main Entrance',
-      addCheckpoint: '+ Add Checkpoint',
+      addCheckpoint: 'Add Checkpoint',
       removeCheckpoint: 'Remove checkpoint',
       checkpointNameRequired: 'Enter a checkpoint name.',
       checkpointDuplicate: 'This checkpoint is already added.',
@@ -598,8 +602,8 @@ const en = {
       liveStatus: 'LIVE STATUS',
       viewAll: 'View All',
       onDuty: 'On Duty',
-      addGuard: '+ Guard',
-      addSite: '+ Add Site',
+      addGuard: 'Add Guard',
+      addSite: 'Add Site',
       incident: 'Incident',
       fileIncident: 'File Incident',
       searchSites: 'Search sites...',

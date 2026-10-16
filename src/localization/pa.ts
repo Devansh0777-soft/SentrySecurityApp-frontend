@@ -123,7 +123,8 @@ const pa = {
       requestUpdatedHint: 'ਕਲਾਇੰਟ ਬੇਨਤੀ ਦੀ ਸਥਿਤੀ ਸੇਵ ਹੋ ਗਈ ਹੈ।',
       unableToUpdate: 'ਬੇਨਤੀ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋ ਸਕੀ',
       checkpointsTitle: 'ਬੇਨਤੀ ਕੀਤੇ ਗਸ਼ਤ ਚੈੱਕਪੁਆਇੰਟ',
-      checkpointsHint: 'ਕਲਾਇੰਟ ਵੱਲੋਂ ਸ਼ਾਮਲ। ਮਨਜ਼ੂਰੀ ਉੱਤੇ ਇਨ੍ਹਾਂ ਨੂੰ ਸਾਈਟ ਤੇ ਕਾਪੀ ਕੀਤਾ ਜਾਂਦਾ ਹੈ।',
+      checkpointsHint:
+        'ਕਲਾਇੰਟ ਵੱਲੋਂ ਸ਼ਾਮਲ। ਮਨਜ਼ੂਰੀ ਉੱਤੇ ਇਨ੍ਹਾਂ ਨੂੰ ਸਾਈਟ ਤੇ ਕਾਪੀ ਕੀਤਾ ਜਾਂਦਾ ਹੈ।',
       statuses: {
         pending: 'ਬਕਾਇਆ',
         approved: 'ਮਨਜ਼ੂਰ',
@@ -146,6 +147,8 @@ const pa = {
       mobileNumber: 'ਮੋਬਾਈਲ ਨੰਬਰ',
       email: 'ਈਮੇਲ',
       password: 'ਪਾਸਵਰਡ',
+      passwordHelper:
+        'ਪਾਸਵਰਡ ਘੱਟੋ-ਘੱਟ 8 ਅੱਖਰਾਂ ਦਾ ਹੋਵੇ ਅਤੇ ਉਸमें ਵੱਡੇ ਅੱਖਰ (A–Z), ਛੋਟੇ ਅੱਖਰ (a–z) ਅਤੇ ਸੰਖਿਆਵਾਂ (0–9) ਹੋਣ।',
       joiningDate: 'ਨਿਯੁਕਤੀ ਦੀ ਮਿਤੀ',
       address: 'ਪਤਾ (ਵਿਕਲਪਿਕ)',
       age: 'ਉਮਰ (ਵਿਕਲਪਿਕ)',
@@ -182,6 +185,8 @@ const pa = {
       contactError:
         'ਵੈਧ 10 ਅੰਕਾਂ ਦਾ ਭਾਰਤੀ ਮੋਬਾਈਲ, ਈਮੇਲ ਅਤੇ ਘੱਟੋ-ਘੱਟ 6 ਅੱਖਰਾਂ ਦਾ ਪਾਸਵਰਡ ਦਰਜ ਕਰੋ।',
       dateError: 'ਵੈਧ ਮਿਤੀ YYYY-MM-DD ਵਿੱਚ ਦਰਜ ਕਰੋ।',
+      passwordError:
+        'ਪਾਸਵਰਡ ਘੱਟੋ-ਘੱਟ 8 ਅੱਖਰਾਂ ਦਾ ਹੋਵੇ ਅਤੇ ਉਸमें ਵੱਡੇ ਅੱਖਰ (A–Z), ਛੋਟੇ ਅੱਖਰ (a–z) ਅਤੇ ਸੰਖਿਆਵਾਂ (0–9) ਹੋਣ।',
       ageError: 'ਉਮਰ 18 ਤੋਂ 65 ਵਿਚਕਾਰ ਪੂਰਾ ਅੰਕ ਹੋਵੇ।',
       salaryError: 'ਤਨਖਾਹ ਅਤੇ ਭੱਤੇ ਸਿਫ਼ਰ ਜਾਂ ਵੱਧ, ਦੋ ਦਸ਼ਮਲਵ ਅੰਕਾਂ ਤੱਕ ਦਰਜ ਕਰੋ।',
       success: 'ਗਾਰਡ ਸਫਲਤਾਪੂਰਵਕ ਜੋੜਿਆ ਗਿਆ।',
@@ -509,9 +514,10 @@ const pa = {
       notes: 'ਨੋਟਸ',
       notesPlaceholder: 'ਮਿਤੀਆਂ, ਸ਼ਿਫਟ ਸਮਾਂ, ਖਾਸ ਲੋੜਾਂ…',
       checkpointsTitle: 'ਗਸ਼ਤ ਚੈੱਕਪੁਆਇੰਟ',
-      checkpointsHint: 'ਨਿਯੁਕਤ ਗਾਰਡ ਨੂੰ ਕ੍ਰਮ ਨਾਲ ਜਿਨ੍ਹਾਂ ਚੈੱਕਪੁਆਇੰਟਾਂ ਤੇ ਜਾਣਾ ਹੈ, ਉਹ ਸ਼ਾਮਲ ਕਰੋ।',
+      checkpointsHint:
+        'ਨਿਯੁਕਤ ਗਾਰਡ ਨੂੰ ਕ੍ਰਮ ਨਾਲ ਜਿਨ੍ਹਾਂ ਚੈੱਕਪੁਆਇੰਟਾਂ ਤੇ ਜਾਣਾ ਹੈ, ਉਹ ਸ਼ਾਮਲ ਕਰੋ।',
       checkpointPlaceholder: 'ਜਿਵੇਂ Main Entrance',
-      addCheckpoint: '+ ਚੈੱਕਪੁਆਇੰਟ ਜੋੜੋ',
+      addCheckpoint: 'ਚੈੱਕਪੁਆਇੰਟ ਜੋੜੋ',
       removeCheckpoint: 'ਚੈੱਕਪੁਆਇੰਟ ਹਟਾਓ',
       checkpointNameRequired: 'ਚੈੱਕਪੁਆਇੰਟ ਦਾ ਨਾਮ ਲਿਖੋ।',
       checkpointDuplicate: 'ਇਹ ਚੈੱਕਪੁਆਇੰਟ ਪਹਿਲਾਂ ਹੀ ਸ਼ਾਮਲ ਹੈ।',
@@ -570,7 +576,7 @@ const pa = {
       currentPlanLabel: 'ਮਾਈ ਯੋਜਨਾ',
       billingHistory: 'ਪਲਾਟਫਾਮ ਬਿਲਿੰਗ ਇਤਿਹਾਸ',
       billingUnavailable: 'ਬਿਲਿੰਗ ਇਤਿਹਾਸ ਅਜੇਅਪ ਤੋਂ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।',
-      switched: "{{name}} ਤੇ ਸਵਿਚ ਕੀਤਾ ਗਿਆ।",
+      switched: '{{name}} ਤੇ ਸਵਿਚ ਕੀਤਾ ਗਿਆ।',
       renewsOn: '{{date}} ਨੂੰ ਮੁੜ ਭੁਗਤਾਨ ਹੁੰਦਾ ਹੈ · ਮਾਸਿਕ ਭੁਗਤਾਨ',
       planLimits: '{{guards}} ਗਾਰਡ ਅਤੇ {{sites}} ਸਾਈਟਾਂ',
       switchTo: 'ਤੇ ਸਵਿਚ ਕਰੋ {{name}}',
@@ -608,8 +614,8 @@ const pa = {
       liveStatus: 'ਲਾਈਵ ਸਥਿਤੀ',
       viewAll: 'ਸਾਰੇ ਵੇਖੋ',
       onDuty: 'ਡਿਊਟੀ ਉੱਤੇ',
-      addGuard: '+ ਗਾਰਡ',
-      addSite: '+ ਸਾਈਟ ਜੋੜੋ',
+      addGuard: 'ਗਾਰਡ ਜੋੜੋ',
+      addSite: 'ਸਾਈਟ ਜੋੜੋ',
       incident: 'ਘਟਨਾ',
       fileIncident: 'ਘਟਨਾ ਦਰਜ ਕਰੋ',
       searchSites: 'ਸਾਈਟਾਂ ਖੋਜੋ...',
@@ -750,7 +756,8 @@ const pa = {
       guardAddUnavailable: 'ਗਾਰਡ ਜੋੜਨ ਵਾਲਾ ਫਾਰਮ ਜਲਦੀ ਜੋੜਿਆ ਜਾਵੇਗਾ।',
       noMatchingLocations: 'ਕੋਈ ਮਿਲਦੀ ਥਾਂ ਨਹੀਂ ਮਿਲੀ।',
       checkpointsTitle: 'ਗਸ਼ਤ ਚੈੱਕਪੁਆਇੰਟ',
-      checkpointsHint: 'ਚੈੱਕਪੁਆਇੰਟ ਇਸੇ ਸਾਈਟ ਨੂੰ ਲਗਾਏ ਜਾਂਦੇ ਹਨ। ਤੈਨਾਤ ਗਾਰਡ ਇਨ੍ਹਾਂ ਨੂੰ Patrol ਵਿੱਚ ਉਸੇ ਕ੍ਰਮ ਵਿੱਚ ਵੇਖਦਾ ਹੈ।',
+      checkpointsHint:
+        'ਚੈੱਕਪੁਆਇੰਟ ਇਸੇ ਸਾਈਟ ਨੂੰ ਲਗਾਏ ਜਾਂਦੇ ਹਨ। ਤੈਨਾਤ ਗਾਰਡ ਇਨ੍ਹਾਂ ਨੂੰ Patrol ਵਿੱਚ ਉਸੇ ਕ੍ਰਮ ਵਿੱਚ ਵੇਖਦਾ ਹੈ।',
       checkpointNamePlaceholder: 'ਚੈੱਕਪੁਆਇੰਟ ਦਾ ਨਾਮ, ਜਿਵੇਂ Main Gate',
       addCheckpoint: 'ਚੈੱਕਪੁਆਇੰਟ ਜੋੜੋ',
       checkpointsLoading: 'ਚੈੱਕਪੁਆਇੰਟ ਲੋਡ ਹੋ ਰਹੇ ਹਨ…',
@@ -758,9 +765,11 @@ const pa = {
       checkpointNameRequired: 'ਪਹਿਲਾਂ ਚੈੱਕਪੁਆਇੰਟ ਦਾ ਨਾਮ ਲਿਖੋ।',
       checkpointAddFailed: 'ਚੈੱਕਪੁਆਇੰਟ ਜੋੜਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ।',
       checkpointRemoveFailed: 'ਚੈੱਕਪੁਆਇੰਟ ਹਟਾਇਆ ਨਹੀਂ ਜਾ ਸਕਿਆ।',
-      noCheckpointsYet: 'ਹਾਲੇ ਕੋਈ ਚੈੱਕਪੁਆਇੰਟ ਨਹੀਂ ਹੈ। ਉੱਪਰ ਪਹਿਲਾ ਗਸ਼ਤ ਪੜਾਅ ਜੋੜੋ।',
+      noCheckpointsYet:
+        'ਹਾਲੇ ਕੋਈ ਚੈੱਕਪੁਆਇੰਟ ਨਹੀਂ ਹੈ। ਉੱਪਰ ਪਹਿਲਾ ਗਸ਼ਤ ਪੜਾਅ ਜੋੜੋ।',
       removeCheckpointTitle: 'ਚੈੱਕਪੁਆਇੰਟ ਹਟਾਓ',
-      removeCheckpointConfirm: '“{{name}}” ਹਟਾਉਣਾ ਹੈ? ਗਾਰਡ ਨੂੰ ਇਹ Patrol ਵਿੱਚ ਨਹੀਂ ਦਿਸੇਗਾ।',
+      removeCheckpointConfirm:
+        '“{{name}}” ਹਟਾਉਣਾ ਹੈ? ਗਾਰਡ ਨੂੰ ਇਹ Patrol ਵਿੱਚ ਨਹੀਂ ਦਿਸੇਗਾ।',
     },
     event: {
       title: 'ਈਵੈਂਟ ਵੇਰਵੇ',
@@ -913,7 +922,8 @@ const pa = {
         emptyTitle: 'ਕੋਈ ਚੈੱਕਪੁਆਇੰਟ ਨਹੀਂ ਲਗਾਇਆ',
         emptyBody: 'ਤੁਹਾਡੀ ਸਾਈਟ ਤੇ ਲਗਾਉਣ ਉੱਤੇ ਗਸ਼ਤ ਚੈੱਕਪੁਆਇੰਟ ਇੱਥੇ ਦਿਸਣਗੇ।',
         noSiteTitle: 'ਕੋਈ ਸਰਗਰਮ ਸਾਈਟ ਨਹੀਂ ਲਗਾਈ',
-        noSiteBody: 'ਗਸ਼ਤ ਚੈੱਕਪੁਆਇੰਟ ਦਿਸਣ ਤੋਂ ਪਹਿਲਾਂ ਏਜੰਸੀ ਨੂੰ ਤੁਹਾਨੂੰ ਸਾਈਟ ਤੇ ਲਗਾਉਣਾ ਹੋਵੇਗਾ।',
+        noSiteBody:
+          'ਗਸ਼ਤ ਚੈੱਕਪੁਆਇੰਟ ਦਿਸਣ ਤੋਂ ਪਹਿਲਾਂ ਏਜੰਸੀ ਨੂੰ ਤੁਹਾਨੂੰ ਸਾਈਟ ਤੇ ਲਗਾਉਣਾ ਹੋਵੇਗਾ।',
         markVisited: 'ਵਿਜ਼ਿਟ ਦਰਜ ਕਰੋ',
         visited: 'ਵਿਜ਼ਿਟ ਹੋਇਆ',
         notVisited: 'ਲਗਾਇਆ ਗਿਆ ਚੈੱਕਪੁਆਇੰਟ',
@@ -1099,17 +1109,16 @@ const pa = {
       alreadyPaid: 'ਇਸ ਤਨਖਾਹ ਦਾ ਭੁਗਤਾਨ ਪਹਿਲਾਂ ਹੀ ਕਰ ਦਿੱਤਾ ਗਿਆ ਹੈ।',
       guardNotFound: 'ਗਾਰਡ ਨਹੀਂ ਮਿਲਿਆ।',
       confirmPayTitle: 'ਭੁਗਤਾਨ ਕੀਤੇ ਵਜੋਂ ਨਿਸ਼ਾਨ ਲਗਾਓ',
-      confirmPayMessage: '{{name}} ਦੀ {{period}} ਦੀ {{amount}} ਦੀ ਤਨਖਾਹ ਨੂੰ ਭੁਗਤਾਨ ਕੀਤਾ ਨਿਸ਼ਾਨ ਲਗਾਉਣਾ ਹੈ? ਇਹ ਬਾਹਰੀ ਭੁਗਤਾਨ ਦਰਜ ਕਰਦਾ ਹੈ ਅਤੇ ਇਸਨੂੰ ਵਾਪਸ ਨਹੀਂ ਲਿਆ ਜਾ ਸਕਦਾ।',
+      confirmPayMessage:
+        '{{name}} ਦੀ {{period}} ਦੀ {{amount}} ਦੀ ਤਨਖਾਹ ਨੂੰ ਭੁਗਤਾਨ ਕੀਤਾ ਨਿਸ਼ਾਨ ਲਗਾਉਣਾ ਹੈ? ਇਹ ਬਾਹਰੀ ਭੁਗਤਾਨ ਦਰਜ ਕਰਦਾ ਹੈ ਅਤੇ ਇਸਨੂੰ ਵਾਪਸ ਨਹੀਂ ਲਿਆ ਜਾ ਸਕਦਾ।',
       confirm: 'ਪੁਸ਼ਟੀ ਕਰੋ',
       cancel: 'ਰੱਦ ਕਰੋ',
       outstandingAdvance: '{{amount}} ਬਕਾਇਆ',
       advanceRecovered: 'ਵਸੂਲਿਆ ਗਿਆ',
-      advanceRecoveryNote:
-        'ਇਸ ਤਨਖਾਹ ਤੋਂ {{amount}} ਦੇ ਬਕਾਇਆ ਅਗਰਮ ਵਸੂਲੇ ਜਾਣਗੇ।',
+      advanceRecoveryNote: 'ਇਸ ਤਨਖਾਹ ਤੋਂ {{amount}} ਦੇ ਬਕਾਇਆ ਅਗਰਮ ਵਸੂਲੇ ਜਾਣਗੇ।',
       guardInfoUnavailable: 'ਗਾਰਡ ਦੀ ਜਾਣਕਾਰੀ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।',
       periodLabel: '{{month}}',
     },
-
   },
 };
 

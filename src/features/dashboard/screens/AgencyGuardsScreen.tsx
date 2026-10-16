@@ -41,6 +41,7 @@ type Filter = 'all' | 'on_duty' | 'off_duty';
 
 const AgencyGuardsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [addingGuard, setAddingGuard] = useState(false);
+  const [goBackOnClose, setGoBackOnClose] = useState(false);
   const { t } = useTranslation();
   const {
     planName,
@@ -74,6 +75,7 @@ const AgencyGuardsScreen: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     if (route.params?.openAddGuard) {
+      setGoBackOnClose(true);
       navigation.setParams({ openAddGuard: false });
       requestAddGuard();
     }
@@ -229,7 +231,13 @@ const AgencyGuardsScreen: React.FC<Props> = ({ navigation, route }) => {
       <AgencyBottomNavigation activeTab="guards" onTabPress={navigate} />
       <AddGuardModal
         visible={addingGuard}
-        onClose={() => setAddingGuard(false)}
+        onClose={() => {
+          if (goBackOnClose) {
+            navigation.goBack();
+          } else {
+            setAddingGuard(false);
+          }
+        }}
         onCreated={() => {
           setQuery('');
           setFilter('all');

@@ -50,6 +50,17 @@ const displayTime = (value: string) => {
   }`;
 };
 
+// Time navigation: move up/down by exactly 30 minutes, wrapping at midnight
+const timeIndex = (value: string) => times.indexOf(value);
+const nextTime = (value: string) => {
+  const idx = timeIndex(value);
+  return times[(idx + 1) % times.length];
+};
+const prevTime = (value: string) => {
+  const idx = timeIndex(value);
+  return times[(idx - 1 + times.length) % times.length];
+};
+
 type PickerOption = {
   id: string;
   name: string;
@@ -96,11 +107,117 @@ export default function AddGuardModal({
   });
   const submitting = useRef(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [picker, setPicker] = useState<'site' | 'time' | null>(null);
   const [query, setQuery] = useState('');
   const endTime = `${String(
     (Number(startTime.split(':')[0]) + hours) % 24,
   ).padStart(2, '0')}:${startTime.split(':')[1]}`;
+
+  // ---- Field-level validation ----
+  const validateField = (key: string, value: string): string => {
+    switch (key) {
+      case 'fullName':
+        if (!value.trim()) return label('requiredError');
+        return '';
+      case 'mobileNumber':
+        if (!value) return label('requiredError');
+        if (!/^[6-9]\d{9}$/.test(value))
+          return 'Enter a valid 10-digit Indian mobile number.';
+        return '';
+      case 'email':
+        if (!value.trim()) return label('requiredError');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()))
+          return 'Enter a valid email address.';
+        return '';
+      case 'password':
+        if (!guard && !value) return label('requiredError');
+        if (value && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(value)) {
+          return label('passwordError');
+        }
+        return '';
+      case 'joiningDate':
+        if (!value) return label('requiredError');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return label('dateError');
+        const date = new Date(`${value}T00:00:00Z`);
+        if (
+          Number.isNaN(date.getTime()) ||
+          date.toISOString().slice(0, 10) !== value
+        ) {
+          return label('dateError');
+        }
+        return '';
+      case 'address':
+        if (!value.trim()) return label('requiredError');
+        return '';
+      case 'gender':
+        if (!value) return label('requiredError');
+        return '';
+      case 'basicSalary':
+        if (!value) return label('requiredError');
+        if (
+          !/^\d+(\.\d{1,2})?$/.test(value) ||
+          Number(value) <= 0 ||
+          Number(value) > 99999999.99
+        ) {
+          return label('salaryError');
+        }
+        return '';
+      case 'allowances':
+        if (value && !/^\d+(\.\d{1,2})?$/.test(value)) {
+          return label('salaryError');
+        }
+        return '';
+      case 'age':
+        if (
+          value &&
+          (!/^\d+$/.test(value) ||
+            Number(value) < 18 ||
+            Number(value) > 65)
+        ) {
+          return label('ageError');
+        }
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const validateAllFields = (): boolean => {
+    const nextErrors: Record<string, string> = {};
+    const requiredFields: string[] = [
+      'fullName',
+      'mobileNumber',
+      'email',
+      'password',
+      'joiningDate',
+      'address',
+      'gender',
+      'basicSalary',
+    ];
+    let hasError = false;
+    for (const key of requiredFields) {
+      // gender is not in emptyForm, handle it separately
+      const value = key === 'gender' ? gender : form[key as keyof typeof emptyForm];
+      const err = validateField(key, value);
+      if (err) {
+        nextErrors[key] = err;
+        hasError = true;
+      }
+    }
+    // Site is now optional - no validation error for missing siteId
+    setFieldErrors(nextErrors);
+    return !hasError;
+  };
+
+  const clearFieldError = (key: string) => {
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (!visible) return;
     setForm(
@@ -169,56 +286,8 @@ export default function AddGuardModal({
     setForm(current => ({ ...current, [key]: value }));
   const save = async () => {
     if (submitting.current) return;
-    if (
-      !form.fullName.trim() ||
-      !form.mobileNumber ||
-      !form.email.trim() ||
-      (!guard && !form.password) ||
-      !form.joiningDate ||
-      !form.address.trim() ||
-      !form.basicSalary ||
-      !gender ||
-      (!guard && !siteId)
-    ) {
+    if (!validateAllFields()) {
       setError(label('requiredError'));
-      return;
-    }
-    if (
-      !/^[6-9]\d{9}$/.test(form.mobileNumber) ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) ||
-      (!guard && form.password.length < 6) ||
-      (guard && form.password.length > 0 && form.password.length < 6)
-    ) {
-      setError(label('contactError'));
-      return;
-    }
-    const date = new Date(`${form.joiningDate}T00:00:00Z`);
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(form.joiningDate) ||
-      Number.isNaN(date.getTime()) ||
-      date.toISOString().slice(0, 10) !== form.joiningDate
-    ) {
-      setError(label('dateError'));
-      return;
-    }
-    if (
-      form.age &&
-      (!/^\d+$/.test(form.age) ||
-        Number(form.age) < 18 ||
-        Number(form.age) > 65)
-    ) {
-      setError(label('ageError'));
-      return;
-    }
-    if (
-      !/^\d+(\.\d{1,2})?$/.test(form.basicSalary) ||
-      Number(form.basicSalary) <= 0 ||
-      Number(form.basicSalary) > 99999999.99 ||
-      (form.allowances &&
-        (!/^\d+(\.\d{1,2})?$/.test(form.allowances) ||
-          Number(form.allowances) > 99999999.99))
-    ) {
-      setError(label('salaryError'));
       return;
     }
     setError('');
@@ -261,65 +330,80 @@ export default function AddGuardModal({
     key: keyof typeof emptyForm,
     required = false,
     numeric = false,
-  ) => (
-    <View style={s.field}>
-      <Text style={s.label}>
-        {label(key)}
-        {required ? ' *' : ''}
-      </Text>
-      <TextInput
-        accessibilityLabel={label(key)}
-        style={s.input}
-        editable={!saving}
-        value={form[key]}
-        onChangeText={value =>
-          change(
-            key,
-            numeric
-              ? value.replace(/\D/g, '')
+  ) => {
+    const fieldError = fieldErrors[key];
+    const handleBlur = () => {
+      const err = validateField(key, form[key]);
+      if (err) {
+        setFieldErrors(prev => ({ ...prev, [key]: err }));
+      } else {
+        clearFieldError(key);
+      }
+    };
+    return (
+      <View style={s.field}>
+        <Text style={s.label}>
+          {label(key)}
+          {required ? ' *' : ''}
+        </Text>
+        <TextInput
+          accessibilityLabel={label(key)}
+          style={s.input}
+          editable={!saving}
+          value={form[key]}
+          onChangeText={value => {
+            change(
+              key,
+              numeric
+                ? value.replace(/\D/g, '')
+                : key === 'joiningDate'
+                ? value.replace(/[^0-9-]/g, '')
+                : ['basicSalary', 'allowances'].includes(key)
+                ? value.replace(/[^0-9.]/g, '')
+                : value,
+            );
+            // Clear error as user types
+            if (fieldErrors[key]) clearFieldError(key);
+          }}
+          onBlur={handleBlur}
+          maxLength={
+            key === 'mobileNumber'
+              ? 10
+              : key === 'age'
+              ? 2
               : key === 'joiningDate'
-              ? value.replace(/[^0-9-]/g, '')
+              ? 10
+              : key === 'password'
+              ? 72
+              : 255
+          }
+          keyboardType={
+            numeric
+              ? 'number-pad'
+              : key === 'email'
+              ? 'email-address'
               : ['basicSalary', 'allowances'].includes(key)
-              ? value.replace(/[^0-9.]/g, '')
-              : value,
-          )
-        }
-        maxLength={
-          key === 'mobileNumber'
-            ? 10
-            : key === 'age'
-            ? 2
-            : key === 'joiningDate'
-            ? 10
-            : key === 'password'
-            ? 72
-            : 255
-        }
-        keyboardType={
-          numeric
-            ? 'number-pad'
-            : key === 'email'
-            ? 'email-address'
-            : ['basicSalary', 'allowances'].includes(key)
-            ? 'decimal-pad'
-            : 'default'
-        }
-        autoCapitalize={
-          key === 'email' || key === 'password' ? 'none' : 'sentences'
-        }
-        secureTextEntry={key === 'password'}
-        autoCorrect={false}
-        placeholder={
-          key === 'joiningDate'
-            ? 'YYYY-MM-DD'
-            : key === 'mobileNumber'
-            ? '+91 · 9876543210'
-            : undefined
-        }
-        placeholderTextColor={colors.textGray}
-      />
-    </View>
-  );
+              ? 'decimal-pad'
+              : 'default'
+          }
+          autoCapitalize={
+            key === 'email' || key === 'password' ? 'none' : 'sentences'
+          }
+          secureTextEntry={key === 'password'}
+          autoCorrect={false}
+          placeholder={
+            key === 'joiningDate'
+              ? 'YYYY-MM-DD'
+              : key === 'mobileNumber'
+              ? '+91 9876543210'
+              : undefined
+          }
+          placeholderTextColor={colors.textGray}
+        />
+        {fieldError && <Text style={s.error}>{fieldError}</Text>}
+      </View>
+    );
+  };
   const choices = <T extends string | number>(
     values: readonly T[],
     selected: T,
@@ -488,6 +572,9 @@ export default function AddGuardModal({
                   </ScalePressable>
                 </View>
               </View>
+              {!guard && (
+                <Text style={s.passwordHelper}>{label('passwordHelper')}</Text>
+              )}
               <View style={s.field}>
                 <Text style={s.label}>{label('joiningDate')} *</Text>
                 <ScalePressable
@@ -522,7 +609,7 @@ export default function AddGuardModal({
               {field('age', false, true)}
               <Text style={s.label}>{label('gender')} *</Text>
               {choices(['male', 'female', 'other'], gender, setGender, label)}
-              <Text style={s.label}>{label('site')} *</Text>
+              <Text style={s.label}>{label('site')}</Text>
               <ScalePressable
                 style={s.select}
                 disabled={saving || sitesLoading || siteError || !sites.length}
@@ -687,29 +774,51 @@ export default function AddGuardModal({
               placeholder={label('search')}
               placeholderTextColor={colors.textGray}
             />
-            <ScrollView style={s.options} keyboardShouldPersistTaps="handled">
-              {visibleOptions.map(option => (
+            {picker === 'time' ? (
+              <View style={s.timePicker}>
                 <ScalePressable
-                  key={option.id}
-                  style={[s.option, option.disabled && s.optionDisabled]}
-                  disabled={option.disabled}
-                  onPress={() => {
-                    if (picker === 'site')
-                      setSiteId(option.id ? Number(option.id) : null);
-                    else setStartTime(option.id);
-                    setPicker(null);
-                  }}
+                  style={s.timeArrow}
+                  disabled={saving}
+                  onPress={() => setStartTime(nextTime(startTime))}
+                  accessibilityLabel="Increase time by 30 minutes"
                 >
-                  <Text style={s.body}>{option.name}</Text>
-                  {option.note ? (
-                    <Text style={s.optionNote}>{option.note}</Text>
-                  ) : null}
+                  <Text style={s.timeArrowText}>▲</Text>
                 </ScalePressable>
-              ))}
-              {!visibleOptions.length ? (
-                <Text style={s.hint}>{label('noResults')}</Text>
-              ) : null}
-            </ScrollView>
+                <Text style={s.timeValue}>{displayTime(startTime)}</Text>
+                <ScalePressable
+                  style={s.timeArrow}
+                  disabled={saving}
+                  onPress={() => setStartTime(prevTime(startTime))}
+                  accessibilityLabel="Decrease time by 30 minutes"
+                >
+                  <Text style={s.timeArrowText}>▼</Text>
+                </ScalePressable>
+              </View>
+            ) : (
+              <ScrollView style={s.options} keyboardShouldPersistTaps="handled">
+                {visibleOptions.map(option => (
+                  <ScalePressable
+                    key={option.id}
+                    style={[s.option, option.disabled && s.optionDisabled]}
+                    disabled={option.disabled}
+                    onPress={() => {
+                      if (picker === 'site')
+                        setSiteId(option.id ? Number(option.id) : null);
+                      else setStartTime(option.id);
+                      setPicker(null);
+                    }}
+                  >
+                    <Text style={s.body}>{option.name}</Text>
+                    {option.note ? (
+                      <Text style={s.optionNote}>{option.note}</Text>
+                    ) : null}
+                  </ScalePressable>
+                ))}
+                {!visibleOptions.length ? (
+                  <Text style={s.hint}>{label('noResults')}</Text>
+                ) : null}
+              </ScrollView>
+            )}
           </View>
         </SafeAreaView>
       </Modal>
@@ -917,6 +1026,11 @@ const s = StyleSheet.create({
   white: { color: colors.white },
   placeholder: { color: colors.textGray },
   hint: { color: colors.textGray, fontSize: scaleFont(typography.sizes.sm) },
+  passwordHelper: {
+    color: colors.textGray,
+    fontSize: scaleFont(typography.sizes.sm),
+    marginTop: spacing.xs,
+  },
   error: {
     color: colors.status.danger,
     fontSize: scaleFont(typography.sizes.sm),
@@ -1009,5 +1123,31 @@ const s = StyleSheet.create({
     fontSize: scaleFont(typography.sizes.sm),
     fontWeight: typography.weights.medium,
     textAlign: 'center',
+  },
+  timePicker: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  timeArrow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: spacing.xxxl,
+    minHeight: spacing.xxxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  timeArrowText: {
+    fontSize: scaleFont(typography.sizes.md),
+    color: colors.primary,
+  },
+  timeValue: {
+    fontSize: scaleFont(typography.sizes.md),
+    fontWeight: typography.weights.medium,
+    color: colors.primary,
   },
 });
