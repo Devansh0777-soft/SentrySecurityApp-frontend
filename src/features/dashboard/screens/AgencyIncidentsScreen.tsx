@@ -25,7 +25,6 @@ import AgencyBottomNavigation, {
 } from '../components/AgencyBottomNavigation';
 import AgencyProfileMenu from '../components/AgencyProfileMenu';
 import AgencyTopNavigation from '../components/AgencyTopNavigation';
-import FileIncidentModal from '../components/FileIncidentModal';
 import {
   agencyApiService,
   type AgencyIncident,
@@ -58,10 +57,6 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
   const { t } = useTranslation();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [filter, setFilter] = useState<'All' | Severity>('All');
-  const [fileModalOpen, setFileModalOpen] = useState(
-    route.params?.openFileIncident ?? false,
-  );
-  const [goBackOnClose, setGoBackOnClose] = useState(false);
   const [incidents, setIncidents] = useState<AgencyIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -83,9 +78,8 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [t]);
   useEffect(() => {
     if (route.params?.openFileIncident) {
-      setGoBackOnClose(true);
-      setFileModalOpen(true);
       navigation.setParams({ openFileIncident: undefined });
+      navigation.navigate('AgencyFileIncident');
     }
   }, [navigation, route.params?.openFileIncident]);
   // Reload whenever the tab regains focus so an incident filed by a guard (the
@@ -148,7 +142,7 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
       >
         <ScalePressable
           style={s.fileButton}
-          onPress={() => setFileModalOpen(true)}
+          onPress={() => navigation.navigate('AgencyFileIncident')}
           accessibilityRole="button"
         >
           <Text style={s.fileText}>{t('dashboard.fileIncident')}</Text>
@@ -218,17 +212,6 @@ const AgencyIncidentsScreen: React.FC<Props> = ({ navigation, route }) => {
           onLogout={() => setProfileMenuOpen(false)}
         />
       ) : null}
-      <FileIncidentModal
-        visible={fileModalOpen}
-        onClose={() => {
-          if (goBackOnClose) {
-            navigation.goBack();
-          } else {
-            setFileModalOpen(false);
-          }
-        }}
-        onCreated={loadIncidents}
-      />
       <IncidentStatusModal
         visible={Boolean(selectedIncident)}
         incident={selectedIncident}

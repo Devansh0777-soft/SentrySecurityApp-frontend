@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Dimensions,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -11,8 +13,11 @@ import {
   Text,
   TextInput,
   View,
+  type HostInstance,
+  type LayoutChangeEvent,
+  type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +75,14 @@ type PickerOption = {
   disabled?: boolean;
 };
 
+/** Gap between the input and its floating site picker overlay. */
+const SITE_MENU_GAP = 8;
+/**
+ * Height reserved for the picker header + clear button so only the options
+ * list is sized against the available screen space.
+ */
+const SITE_PICKER_CHROME = spacing.xxxl * 2;
+
 type Props = {
   navigation: NativeStackNavigationProp<
     MainStackParamList,
@@ -95,6 +108,17 @@ export default function AddGuardScreen({ navigation }: Props) {
   const [guards, setGuards] = useState<AgencyGuard[]>([]);
   const [siteError, setSiteError] = useState(false);
   const [sitesLoading, setSitesLoading] = useState(false);
+  const siteAnchorRef = useRef<HostInstance>(null);
+  const [siteAnchor, setSiteAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [siteOverlayH, setSiteOverlayH] = useState(
+    Dimensions.get('window').height,
+  );
+  const insets = useSafeAreaInsets();
   const [saving, setSaving] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -285,6 +309,37 @@ export default function AddGuardScreen({ navigation }: Props) {
   const selectSite = (siteIdValue: number | null) => {
     setSiteId(siteIdValue);
     setPicker(null);
+  };
+
+  /**
+   * Toggles the Initial Site Assignment picker as a floating overlay anchored
+   * to the input. The previous handler always forced `picker` to 'site', so
+   * the arrow could never close the list and the inline expansion kept
+   * reflowing the form under the user's finger.
+   */
+  const toggleSitePicker = () => {
+    if (picker === 'site') {
+      setPicker(null);
+      return;
+    }
+    Keyboard.dismiss();
+    requestAnimationFrame(() => {
+      const node = siteAnchorRef.current;
+      if (!node) {
+        setSiteAnchor(null);
+        setPicker('site');
+        return;
+      }
+      node.measureInWindow((x, y, width, height) => {
+        setSiteAnchor({ x, y, width, height });
+        setPicker('site');
+      });
+    });
+  };
+
+  const handleSiteOverlayLayout = (event: LayoutChangeEvent) => {
+    const next = event.nativeEvent.layout.height;
+    setSiteOverlayH(current => (current === next ? current : next));
   };
 
   // Load sites on mount
@@ -481,6 +536,43 @@ export default function AddGuardScreen({ navigation }: Props) {
       };
     }),
   ];
+
+  // Positioning: anchor the floating picker to the input, flipping it above
+  // the input when there is not enough room below, and cap only the option
+  // list so the form behind never moves.
+  const siteDesiredCard = spacing.xxxl * 4 + SITE_PICKER_CHROME;
+  const siteRoomBelow = siteAnchor
+    ? siteOverlayH - (siteAnchor.y + siteAnchor.height) - insets.bottom - SITE_MENU_GAP
+    : 0;
+  const siteRoomAbove = siteAnchor
+    ? siteAnchor.y - insets.top - SITE_MENU_GAP
+    : 0;
+  const sitePickerOpensUp =
+    siteAnchor !== null &&
+    siteRoomBelow < siteDesiredCard &&
+    siteRoomAbove > siteRoomBelow;
+  const siteRoom = sitePickerOpensUp ? siteRoomAbove : siteRoomBelow;
+  const siteCardMax = siteAnchor
+    ? Math.max(siteRoom, 0)
+    : spacing.xxxl * 5;
+  const siteListMax = siteAnchor
+    ? Math.max(
+        Math.min(spacing.xxxl * 4, siteRoom - SITE_PICKER_CHROME),
+        spacing.xxxl,
+      )
+    : spacing.xxxl * 4;
+  const siteCardStyle: ViewStyle = siteAnchor
+    ? {
+        position: 'absolute',
+        left: siteAnchor.x,
+        width: siteAnchor.width,
+        maxHeight: siteCardMax,
+        ...(sitePickerOpensUp
+          ? { bottom: siteOverlayH - siteAnchor.y + SITE_MENU_GAP }
+          : { top: siteAnchor.y + siteAnchor.height + SITE_MENU_GAP }),
+      }
+    : { width: '86%', maxHeight: spacing.xxxl * 5 };
+  const siteListStyle: ViewStyle = { maxHeight: siteListMax };
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
@@ -685,68 +777,34 @@ export default function AddGuardScreen({ navigation }: Props) {
           {choices(['male', 'female', 'other'], gender, setGender, label)}
           {fieldErrors.gender && <Text style={s.error}>{fieldErrors.gender}</Text>}
           <Text style={s.label}>{label('site')}</Text>
-          <ScalePressable
-            style={s.select}
-            disabled={saving || sitesLoading || siteError || !sites.length}
-            onPress={() => {
-              setPicker('site');
-              setQuery('');
-            }}
-          >
-            <Text style={[s.body, !siteId && s.placeholder]}>
-              {sitesLoading
-                ? label('loadingSites')
-                : sites.find(site => site.id === siteId)?.site_name ||
-                  t('dashboard.selectInitialSite')}
-            </Text>
-            <Feather
-              name={picker === 'site' ? 'chevron-up' : 'chevron-down'}
-              size={scaleFont(20)}
-              color={colors.primary}
-            />
-          </ScalePressable>
+          <View ref={siteAnchorRef}>
+            <ScalePressable
+              style={s.select}
+              disabled={saving || sitesLoading || siteError || !sites.length}
+              onPress={() => {
+                setQuery('');
+                toggleSitePicker();
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: picker === 'site' }}
+              accessibilityLabel={label('site')}
+            >
+              <Text style={[s.body, !siteId && s.placeholder]}>
+                {sitesLoading
+                  ? label('loadingSites')
+                  : sites.find(site => site.id === siteId)?.site_name ||
+                    t('dashboard.selectInitialSite')}
+              </Text>
+              <Feather
+                name={picker === 'site' ? 'chevron-up' : 'chevron-down'}
+                size={scaleFont(20)}
+                color={colors.primary}
+              />
+            </ScalePressable>
+          </View>
           {siteError ? (
             <Text style={s.error}>{label('requiredError')}</Text>
           ) : null}
-          {picker === 'site' && (
-            <View style={s.sitePicker}>
-              <Text style={s.sitePickerHeader}>{t('dashboard.selectInitialSite')}</Text>
-              <ScrollView
-                style={s.sitePickerList}
-                showsVerticalScrollIndicator={false}
-              >
-                {siteOptions.map(option => (
-                  <ScalePressable
-                    key={option.id}
-                    style={[
-                      s.sitePickerOption,
-                      option.disabled && s.sitePickerOptionDisabled,
-                      siteId === Number(option.id) && s.sitePickerOptionSelected,
-                    ]}
-                    disabled={option.disabled || saving}
-                    onPress={() => selectSite(option.disabled ? null : Number(option.id))}
-                  >
-                    <Text style={s.sitePickerOptionText}>{option.name}</Text>
-                    {option.note ? (
-                      <Text style={s.sitePickerOptionNote}>{option.note}</Text>
-                    ) : null}
-                    {siteId === Number(option.id) ? (
-                      <Feather name="check" size={scaleFont(18)} color={colors.primary} />
-                    ) : null}
-                  </ScalePressable>
-                ))}
-                {!sites.length && !sitesLoading && !siteError ? (
-                  <Text style={s.sitePickerEmpty}>{t('dashboard.noSites')}</Text>
-                ) : null}
-              </ScrollView>
-              <ScalePressable
-                style={s.sitePickerClear}
-                onPress={() => selectSite(null)}
-              >
-                <Text style={s.sitePickerClearText}>{t('dashboard.cancel')}</Text>
-              </ScalePressable>
-            </View>
-          )}
           <Text style={s.label}>{label('coveragePlan')} *</Text>
           {choices<Plan>(
             ['day_shift', 'night_watch', '24x7'],
@@ -770,45 +828,67 @@ export default function AddGuardScreen({ navigation }: Props) {
                 <View style={s.column}>
                   <Text style={s.label}>{label('startTime')} *</Text>
                   <View style={s.timeControl}>
-                    <ScalePressable
-                      style={s.timeArrow}
-                      disabled={saving}
-                      onPress={() => setStartTime(prevTime(startTime))}
-                      accessibilityLabel="Decrease start time by 30 minutes"
-                    >
-                      <Text style={s.timeArrowText}>▲</Text>
-                    </ScalePressable>
-                    <Text style={s.timeValue}>{displayTime(startTime)}</Text>
-                    <ScalePressable
-                      style={s.timeArrow}
-                      disabled={saving}
-                      onPress={() => setStartTime(nextTime(startTime))}
-                      accessibilityLabel="Increase start time by 30 minutes"
-                    >
-                      <Text style={s.timeArrowText}>▼</Text>
-                    </ScalePressable>
+                    <View style={s.timeLeft}>
+                      <Feather
+                        name="clock"
+                        size={scaleFont(20)}
+                        color={colors.primary}
+                      />
+                      <Text style={s.timeValue}>{displayTime(startTime)}</Text>
+                    </View>
+                    <View style={s.timeArrows}>
+                      <ScalePressable
+                        style={s.timeArrow}
+                        disabled={saving}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                        onPress={() => setStartTime(prevTime(startTime))}
+                        accessibilityLabel="Decrease start time by 30 minutes"
+                      >
+                        <Text style={s.timeArrowText}>▲</Text>
+                      </ScalePressable>
+                      <ScalePressable
+                        style={s.timeArrow}
+                        disabled={saving}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                        onPress={() => setStartTime(nextTime(startTime))}
+                        accessibilityLabel="Increase start time by 30 minutes"
+                      >
+                        <Text style={s.timeArrowText}>▼</Text>
+                      </ScalePressable>
+                    </View>
                   </View>
                 </View>
                 <View style={s.column}>
                   <Text style={s.label}>{label('endTime')} *</Text>
                   <View style={s.timeControl}>
-                    <ScalePressable
-                      style={s.timeArrow}
-                      disabled={saving}
-                      onPress={() => setEndTime(prevTime(endTime))}
-                      accessibilityLabel="Decrease end time by 30 minutes"
-                    >
-                      <Text style={s.timeArrowText}>▲</Text>
-                    </ScalePressable>
-                    <Text style={s.timeValue}>{displayTime(endTime)}</Text>
-                    <ScalePressable
-                      style={s.timeArrow}
-                      disabled={saving}
-                      onPress={() => setEndTime(nextTime(endTime))}
-                      accessibilityLabel="Increase end time by 30 minutes"
-                    >
-                      <Text style={s.timeArrowText}>▼</Text>
-                    </ScalePressable>
+                    <View style={s.timeLeft}>
+                      <Feather
+                        name="clock"
+                        size={scaleFont(20)}
+                        color={colors.primary}
+                      />
+                      <Text style={s.timeValue}>{displayTime(endTime)}</Text>
+                    </View>
+                    <View style={s.timeArrows}>
+                      <ScalePressable
+                        style={s.timeArrow}
+                        disabled={saving}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                        onPress={() => setEndTime(prevTime(endTime))}
+                        accessibilityLabel="Decrease end time by 30 minutes"
+                      >
+                        <Text style={s.timeArrowText}>▲</Text>
+                      </ScalePressable>
+                      <ScalePressable
+                        style={s.timeArrow}
+                        disabled={saving}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                        onPress={() => setEndTime(nextTime(endTime))}
+                        accessibilityLabel="Increase end time by 30 minutes"
+                      >
+                        <Text style={s.timeArrowText}>▼</Text>
+                      </ScalePressable>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -1016,6 +1096,68 @@ export default function AddGuardScreen({ navigation }: Props) {
           </View>
         </Modal>
       )}
+      {/* Initial Site Assignment floats above the form so it never shifts. */}
+      <Modal
+        transparent
+        visible={picker === 'site'}
+        animationType="fade"
+        onRequestClose={() => setPicker(null)}
+      >
+        <View style={s.siteOverlay} onLayout={handleSiteOverlayLayout}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setPicker(null)}
+            accessibilityLabel={t('dashboard.close')}
+          />
+          <View style={[s.sitePicker, siteCardStyle]}>
+            <Text style={s.sitePickerHeader}>
+              {t('dashboard.selectInitialSite')}
+            </Text>
+            <ScrollView
+              style={siteListStyle}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+            >
+              {siteOptions.map(option => (
+                <ScalePressable
+                  key={option.id}
+                  style={[
+                    s.sitePickerOption,
+                    option.disabled && s.sitePickerOptionDisabled,
+                    siteId === Number(option.id) && s.sitePickerOptionSelected,
+                  ]}
+                  disabled={option.disabled || saving}
+                  onPress={() =>
+                    selectSite(option.disabled ? null : Number(option.id))
+                  }
+                >
+                  <Text style={s.sitePickerOptionText}>{option.name}</Text>
+                  {option.note ? (
+                    <Text style={s.sitePickerOptionNote}>{option.note}</Text>
+                  ) : null}
+                  {siteId === Number(option.id) ? (
+                    <Feather
+                      name="check"
+                      size={scaleFont(18)}
+                      color={colors.primary}
+                    />
+                  ) : null}
+                </ScalePressable>
+              ))}
+              {!sites.length && !sitesLoading && !siteError ? (
+                <Text style={s.sitePickerEmpty}>{t('dashboard.noSites')}</Text>
+              ) : null}
+            </ScrollView>
+            <ScalePressable
+              style={s.sitePickerClear}
+              onPress={() => selectSite(null)}
+            >
+              <Text style={s.sitePickerClearText}>{t('dashboard.cancel')}</Text>
+            </ScalePressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1136,22 +1278,25 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: spacing.xxxl,
+    minHeight: spacing.xxl,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: spacing.sm,
     paddingHorizontal: spacing.sm,
+  },
+  timeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
+  timeArrows: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignSelf: 'stretch',
+  },
   timeArrow: {
-    minWidth: spacing.xxxl,
-    minHeight: spacing.xxxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: spacing.sm / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.white,
   },
   timeArrowText: {
     fontSize: scaleFont(typography.sizes.md),
@@ -1161,6 +1306,7 @@ const s = StyleSheet.create({
     fontSize: scaleFont(typography.sizes.md),
     color: colors.primary,
     fontWeight: typography.weights.medium,
+    flexShrink: 1,
   },
   submit: {
     width: '100%',
@@ -1175,14 +1321,18 @@ const s = StyleSheet.create({
     fontSize: scaleFont(typography.sizes.lg),
     fontWeight: typography.weights.bold,
   },
+  siteOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(11,31,58,0.45)',
+  },
   sitePicker: {
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: spacing.sm,
-    marginTop: spacing.xs,
-    maxHeight: spacing.xxxl * 5,
-    zIndex: 100,
+    overflow: 'hidden',
     elevation: 10,
   },
   sitePickerHeader: {
@@ -1193,9 +1343,6 @@ const s = StyleSheet.create({
     fontSize: scaleFont(typography.sizes.sm),
     fontWeight: typography.weights.medium,
     color: colors.textGray,
-  },
-  sitePickerList: {
-    maxHeight: spacing.xxxl * 4,
   },
   sitePickerOption: {
     flexDirection: 'row',

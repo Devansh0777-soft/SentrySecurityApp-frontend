@@ -25,8 +25,6 @@ import AgencyProfileMenu from '../components/AgencyProfileMenu';
 import AgencyTopNavigation from '../components/AgencyTopNavigation';
 import type { MainStackParamList } from '../../../navigation/types';
 import ScalePressable from '../../../components/common/ScalePressable';
-import GuardsOnDutyModal from '../components/GuardsOnDutyModal';
-import ActiveSitesModal from '../components/ActiveSitesModal';
 import {
   agencyApiService,
   type AgencyGuard,
@@ -111,8 +109,6 @@ type Props = NativeStackScreenProps<MainStackParamList, 'AgencyOverview'>;
 const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
   const { t, i18n } = useTranslation();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [guardsOnDutyOpen, setGuardsOnDutyOpen] = useState(false);
-  const [activeSitesOpen, setActiveSitesOpen] = useState(false);
   const [sites, setSites] = useState<AgencySite[]>([]);
   const [guards, setGuards] = useState<AgencyGuard[]>([]);
   const [incidents, setIncidents] = useState<AgencyIncident[]>([]);
@@ -388,9 +384,9 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
                   style={s.card}
                   onPress={
                     label === 'guardsOnDuty'
-                      ? () => setGuardsOnDutyOpen(true)
+                      ? () => navigation.navigate('AgencyGuards')
                       : label === 'activeSites'
-                      ? () => setActiveSitesOpen(true)
+                      ? () => navigation.navigate('AgencySites')
                       : label === 'openIncidents'
                       ? () => navigation.navigate('AgencyIncidents')
                       : undefined
@@ -409,7 +405,11 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
                   <View style={s.cardCopy}>
                     <Text style={[s.number, { color }]}>{value}</Text>
                     <Text style={s.cardLabel}>{t(`dashboard.${label}`)}</Text>
-                    <Text style={s.details}>{t('dashboard.viewDetails')} ›</Text>
+                    {label !== 'unassignedGuards' ? (
+                      <Text style={s.details}>
+                        {t('dashboard.viewDetails')} ›
+                      </Text>
+                    ) : null}
                   </View>
                 </TouchableOpacity>
               ))}
@@ -481,9 +481,7 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
                 icon="alert-triangle"
                 text={t('dashboard.incident')}
                 color="#F22121"
-                onPress={() =>
-                  navigation.navigate('AgencyIncidents', { openFileIncident: true })
-                }
+                onPress={() => navigation.navigate('AgencyFileIncident')}
               />
             </View>
 
@@ -548,14 +546,6 @@ const AgencyOverviewScreen: React.FC<Props> = ({ navigation }) => {
           onLogout={() => setProfileMenuOpen(false)}
         />
       ) : null}
-      <GuardsOnDutyModal
-        visible={guardsOnDutyOpen}
-        onClose={() => setGuardsOnDutyOpen(false)}
-      />
-      <ActiveSitesModal
-        visible={activeSitesOpen}
-        onClose={() => setActiveSitesOpen(false)}
-      />
     </SafeAreaView>
   );
 };

@@ -24,6 +24,7 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   AgencyOverview: undefined;
   AgencyIncidents: { openFileIncident?: boolean } | undefined;
+  AgencyFileIncident: undefined;
   AgencySites: { openAddSite?: boolean; openRequestId?: number } | undefined;
   AgencyProfile: undefined;
   AgencyGuards: { openAddGuard?: boolean } | undefined;
@@ -32,6 +33,7 @@ export type MainStackParamList = {
   AgencyPayroll: undefined;
   AgencyPayrollDetails: { guardId: number; period: string };
   AgencyEventDetails: { siteId: number };
+  AgencyGuardDetails: { guardId: number };
   AddGuardScreen: undefined;
   AddSiteScreen: undefined;
 };

@@ -779,6 +779,7 @@ export default function AddGuardModal({
                 <ScalePressable
                   style={s.timeArrow}
                   disabled={saving}
+                  hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
                   onPress={() => setStartTime(nextTime(startTime))}
                   accessibilityLabel="Increase time by 30 minutes"
                 >
@@ -788,6 +789,7 @@ export default function AddGuardModal({
                 <ScalePressable
                   style={s.timeArrow}
                   disabled={saving}
+                  hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
                   onPress={() => setStartTime(prevTime(startTime))}
                   accessibilityLabel="Decrease time by 30 minutes"
                 >
@@ -1134,11 +1136,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: spacing.xxxl,
-    minHeight: spacing.xxxl,
+    width: spacing.xxl,
+    height: spacing.xxl,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: spacing.sm,
+    borderRadius: spacing.sm / 2,
     backgroundColor: colors.white,
   },
   timeArrowText: {
@@ -1149,5 +1151,6 @@ const s = StyleSheet.create({
     fontSize: scaleFont(typography.sizes.md),
     fontWeight: typography.weights.medium,
     color: colors.primary,
+    flexShrink: 1,
   },
 });

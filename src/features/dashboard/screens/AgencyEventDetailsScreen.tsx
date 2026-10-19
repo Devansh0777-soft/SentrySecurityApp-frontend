@@ -31,7 +31,6 @@ import AgencyBottomNavigation, {
 import AgencyProfileMenu from '../components/AgencyProfileMenu';
 import AgencyTopNavigation from '../components/AgencyTopNavigation';
 import ScalePressable from '../../../components/common/ScalePressable';
-import AddGuardModal from '../components/AddGuardModal';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyEventDetails'>;
 
@@ -51,7 +50,6 @@ const AgencyEventDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [missing, setMissing] = useState(false);
-  const [selectedGuard, setSelectedGuard] = useState<AgencyGuard | null>(null);
   const [guardNotice, setGuardNotice] = useState('');
 
   const load = useCallback(async () => {
@@ -96,10 +94,7 @@ const AgencyEventDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const openGuard = (guard: AgencyGuard) => {
     setGuardNotice('');
-    agencyApiService
-      .getGuard(guard.id)
-      .then(fresh => setSelectedGuard(fresh))
-      .catch(() => setGuardNotice(t('event.guardUnavailable')));
+    navigation.navigate('AgencyGuardDetails', { guardId: guard.id });
   };
 
   const onDuty = guards.filter(g => g.status === 'on_duty').length;
@@ -204,22 +199,12 @@ const AgencyEventDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <ScalePressable style={s.back} onPress={() => navigation.goBack()} accessibilityRole="button">
-          <Feather name="chevron-left" size={f(22)} color={colors.primary} />
-          <Text style={s.backText}>{t('dashboard.back')}</Text>
-        </ScalePressable>
         <Text style={s.title} numberOfLines={2}>
           {site?.site_name || t('event.title')}
         </Text>
         {renderBody()}
       </ScrollView>
       <AgencyBottomNavigation activeTab="overview" onTabPress={navigate} />
-      <AddGuardModal
-        visible={selectedGuard !== null}
-        guard={selectedGuard}
-        onClose={() => setSelectedGuard(null)}
-        onCreated={() => { setSelectedGuard(null); load(); }}
-      />
       {profileMenuOpen ? (
         <ScalePressable style={s.backdrop} onPress={() => setProfileMenuOpen(false)} accessibilityLabel={t('dashboard.close')}>
           <View />
