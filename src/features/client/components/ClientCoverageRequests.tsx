@@ -1,7 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -27,9 +32,30 @@ import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
 import { scaleFont } from '../../../styles/dimensions';
+import { appAlert } from '../../../services/alertService';
 
 type Picker = 'state' | 'district' | 'city' | null;
 type CheckpointResolution = { checkpoints: string[] } | { error: string };
+/** Every field of the request form that carries its own validation state. */
+type FieldKey =
+  | 'eventName'
+  | 'state'
+  | 'district'
+  | 'city'
+  | 'siteLocation'
+  | 'guardsNeeded'
+  | 'agency';
+type FieldErrors = Partial<Record<FieldKey, string>>;
+/** Validation order so the first invalid field is the one focused/scrolled to. */
+const FIELD_ORDER: FieldKey[] = [
+  'eventName',
+  'state',
+  'district',
+  'city',
+  'agency',
+  'siteLocation',
+  'guardsNeeded',
+];
 const emptyForm = {
   eventName: '',
   state: '',
@@ -41,7 +67,7 @@ const emptyForm = {
 
 export default function ClientCoverageRequests() {
   const { t, i18n } = useTranslation();
-  const [form, setForm] = useState(emptyForm);
+  const [form, setFormState] = useState(emptyForm);
   const [guardsNeeded, setGuardsNeeded] = useState(1);
   const [requests, setRequests] = useState<CoverageRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +90,21 @@ export default function ClientCoverageRequests() {
   const [checkpoints, setCheckpoints] = useState<string[]>([]);
   const [checkpointDraft, setCheckpointDraft] = useState('');
   const [checkpointError, setCheckpointError] = useState('');
-  const [expandedRequestId, setExpandedRequestId] = useState<number | null>(null);
+  const [expandedRequestId, setExpandedRequestId] = useState<number | null>(
+    null,
+  );
+  // Per-field validation messages shown directly beneath each control.
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const eventNameRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const siteLocationRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  // Synchronous duplicate-submission guard (state updates are async).
+  const submittingRef = useRef(false);
+  // Mirrors of the form/guards state so validation always reads the latest
+  // values, even when it runs in the same tick as a change (e.g. on blur).
+  const formRef = useRef(form);
+  const guardsNeededRef = useRef(guardsNeeded);
+  formRef.current = form;
+  guardsNeededRef.current = guardsNeeded;
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -120,8 +160,87 @@ export default function ClientCoverageRequests() {
     };
   }, [form.district, t]);
 
-  const update = (key: keyof typeof emptyForm, value: string) =>
-    setForm(current => ({ ...current, [key]: value }));
+  const clearFieldError = (key: FieldKey) =>
+    setFieldErrors(current => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+
+  const update = (key: keyof typeof emptyForm, value: string) => {
+    const next = { ...formRef.current, [key]: value };
+    // Keep the ref in sync synchronously so a blur that fires right after the
+    // change validates against the updated value, not a stale closure.
+    formRef.current = next;
+    setFormState(next);
+    // The user is correcting this field — clear its stale error immediately.
+    clearFieldError(key as FieldKey);
+  };
+
+  /** Single source of truth for each field's validation rule. */
+  const validateField = (key: FieldKey): string => {
+    const current = formRef.current;
+    switch (key) {
+      case 'eventName':
+        return current.eventName.trim()
+          ? ''
+          : t('coverageRequest.eventNameRequired');
+      case 'state':
+        return current.state ? '' : t('coverageRequest.stateRequired');
+      case 'district':
+        return current.district ? '' : t('coverageRequest.districtRequired');
+      case 'city':
+        return current.city ? '' : t('coverageRequest.cityRequired');
+      case 'siteLocation':
+        return current.siteLocation.trim()
+          ? ''
+          : t('coverageRequest.siteLocationRequired');
+      case 'guardsNeeded':
+        return Number.isInteger(guardsNeededRef.current) &&
+          guardsNeededRef.current >= 1 &&
+          guardsNeededRef.current <= 99
+          ? ''
+          : t('coverageRequest.guardsNeededInvalid');
+      case 'agency':
+        return selectedAgencyId !== null
+          ? ''
+          : t('coverageRequest.agencyRequired');
+    }
+  };
+
+  /** Re-validates one field and stores (or clears) its message. */
+  const validateAndSet = (key: FieldKey): string => {
+    const message = validateField(key);
+    setFieldErrors(current => {
+      if ((current[key] ?? '') === message) return current;
+      const next = { ...current };
+      if (message) next[key] = message;
+      else delete next[key];
+      return next;
+    });
+    return message;
+  };
+
+  const validateAll = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    for (const key of FIELD_ORDER) {
+      const message = validateField(key);
+      if (message) errors[key] = message;
+    }
+    return errors;
+  };
+
+  /**
+   * Brings the first invalid field into view. Text inputs are focused, which
+   * makes the platform scroll them into view inside the parent ScrollView;
+   * dropdown-style fields rely on their inline error being visible.
+   */
+  const focusInvalidField = (errors: FieldErrors) => {
+    const first = FIELD_ORDER.find(key => errors[key]);
+    if (first === 'eventName') eventNameRef.current?.focus();
+    if (first === 'siteLocation') siteLocationRef.current?.focus();
+  };
   const find = (options: IndiaLocationOption[], name: string) =>
     options.find(option => option.name.toLowerCase() === name.toLowerCase());
   const openPicker = async (type: Exclude<Picker, null>) => {
@@ -145,11 +264,12 @@ export default function ClientCoverageRequests() {
       }
     } catch (locationError) {
       setPicker(null);
-      Alert.alert(
+      appAlert.alert(
         t('coverageRequest.location'),
         locationError instanceof Error
           ? locationError.message
           : t('coverageRequest.locationFailed'),
+        { type: 'error' },
       );
     } finally {
       setLocationsLoading(false);
@@ -167,22 +287,41 @@ export default function ClientCoverageRequests() {
   const select = (option: IndiaLocationOption) => {
     if (picker === 'state') {
       setSelectedAgencyId(null);
-      setForm(current => ({
-        ...current,
+      const next = {
+        ...formRef.current,
         state: option.name,
         district: '',
         city: '',
-      }));
+      };
+      formRef.current = next;
+      setFormState(next);
       setDistricts([]);
       setCities([]);
+      // The old district/city/agency no longer match the new state.
+      clearFieldError('state');
+      clearFieldError('district');
+      clearFieldError('city');
+      clearFieldError('agency');
     }
     if (picker === 'district') {
       setSelectedAgencyId(null);
-      setForm(current => ({ ...current, district: option.name, city: '' }));
+      const next = { ...formRef.current, district: option.name, city: '' };
+      formRef.current = next;
+      setFormState(next);
       setCities([]);
+      clearFieldError('district');
+      clearFieldError('city');
+      clearFieldError('agency');
     }
     if (picker === 'city') update('city', option.name);
     setPicker(null);
+  };
+
+  /** Closing the picker without choosing validates the field it belongs to. */
+  const closePicker = () => {
+    const dismissed = picker;
+    setPicker(null);
+    if (dismissed) validateAndSet(dismissed);
   };
   const openAgencyDetails = async (agency: AvailableAgency) => {
     if (selectedAgencyId === agency.id) {
@@ -196,28 +335,27 @@ export default function ClientCoverageRequests() {
       setAgencyDetails(await clientService.getAgencyDetails(agency.id));
     } catch (detailsError) {
       setAgencyDetailsOpen(false);
-      Alert.alert(
+      appAlert.alert(
         t('coverageRequest.agencyDetails'),
         detailsError instanceof Error
           ? detailsError.message
           : t('coverageRequest.agencyDetailsFailed'),
+        { type: 'error' },
       );
     } finally {
       setAgencyDetailsLoading(false);
     }
   };
   const submit = async () => {
-    if (
-      !form.eventName.trim() ||
-      !form.state ||
-      !form.district ||
-      !form.city ||
-      !form.siteLocation.trim() ||
-      (agencies.length > 0 && !selectedAgencyId)
-    ) {
-      setError(t('coverageRequest.required'));
+    // Synchronous guard against double taps creating duplicate requests.
+    if (submittingRef.current || saving) return;
+    const errors = validateAll();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      focusInvalidField(errors);
       return;
     }
+    setFieldErrors({});
     // A checkpoint typed but not yet added is still the client's intent, so
     // resolve it here instead of blocking the send.
     const resolved = resolveCheckpointDraft();
@@ -226,6 +364,12 @@ export default function ClientCoverageRequests() {
       return;
     }
     const requestedCheckpoints = resolved.checkpoints;
+    // validateAll() guarantees an agency; keep the narrowing explicit so the
+    // agency's real ID is always part of the payload (never a name-only or
+    // hardcoded agency).
+    const agencyId = selectedAgencyId;
+    if (agencyId === null) return;
+    submittingRef.current = true;
     setSaving(true);
     setError('');
     try {
@@ -235,29 +379,35 @@ export default function ClientCoverageRequests() {
         siteLocation: form.siteLocation.trim(),
         notes: form.notes.trim(),
         guardsNeeded,
-        ...(selectedAgencyId ? { agencyId: selectedAgencyId } : {}),
+        agencyId,
         ...(requestedCheckpoints.length
           ? { checkpoints: requestedCheckpoints.map(name => ({ name })) }
           : {}),
       });
-      setForm(emptyForm);
+      setFormState(emptyForm);
+      formRef.current = emptyForm;
       setGuardsNeeded(1);
+      guardsNeededRef.current = 1;
       setSelectedAgencyId(null);
       setCheckpoints([]);
       setCheckpointDraft('');
       setCheckpointError('');
+      setFieldErrors({});
       await loadRequests();
-      Alert.alert(
+      appAlert.alert(
         t('coverageRequest.sentTitle'),
         t('coverageRequest.sentMessage'),
+        { type: 'success' },
       );
     } catch (saveError) {
+      // Entered values are preserved — only the failure message is surfaced.
       setError(
         saveError instanceof Error
           ? saveError.message
           : t('coverageRequest.sendFailed'),
       );
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };
@@ -303,17 +453,25 @@ export default function ClientCoverageRequests() {
           value={form.eventName}
           onChangeText={value => update('eventName', value)}
           placeholder={t('coverageRequest.eventPlaceholder')}
+          required
+          error={fieldErrors.eventName}
+          inputRef={eventNameRef}
+          onBlur={() => validateAndSet('eventName')}
         />
         <Dropdown
           label={t('dashboard.state')}
           value={form.state}
           open={picker === 'state'}
+          required
+          error={fieldErrors.state}
           onPress={() => openPicker('state')}
         />
         <Dropdown
           label={t('dashboard.district')}
           value={form.district}
           open={picker === 'district'}
+          required
+          error={fieldErrors.district}
           disabled={!form.state}
           onPress={() => openPicker('district')}
         />
@@ -321,6 +479,8 @@ export default function ClientCoverageRequests() {
           label={t('dashboard.city')}
           value={form.city}
           open={picker === 'city'}
+          required
+          error={fieldErrors.city}
           disabled={!form.district}
           onPress={() => openPicker('city')}
         />
@@ -328,6 +488,7 @@ export default function ClientCoverageRequests() {
           <View style={s.agenciesSection}>
             <Text style={s.sectionTitle}>
               {t('coverageRequest.agenciesInArea')}
+              <Text style={s.required}> *</Text>
             </Text>
             {agenciesLoading ? (
               <ActivityIndicator color={colors.primary} />
@@ -381,6 +542,11 @@ export default function ClientCoverageRequests() {
                 {t('coverageRequest.noAgenciesInArea')}
               </Text>
             )}
+            {fieldErrors.agency ? (
+              <Text accessibilityRole="alert" style={s.error}>
+                {fieldErrors.agency}
+              </Text>
+            ) : null}
           </View>
         ) : null}
         <Field
@@ -388,14 +554,25 @@ export default function ClientCoverageRequests() {
           value={form.siteLocation}
           onChangeText={value => update('siteLocation', value)}
           placeholder={t('coverageRequest.sitePlaceholder')}
+          required
+          error={fieldErrors.siteLocation}
+          inputRef={siteLocationRef}
+          onBlur={() => validateAndSet('siteLocation')}
         />
         <View style={s.field}>
-          <Text style={s.label}>{t('coverageRequest.guardsNeeded')}</Text>
+          <Text style={s.label}>
+            {t('coverageRequest.guardsNeeded')}
+            <Text style={s.required}> *</Text>
+          </Text>
           <View style={s.counter}>
             <ScalePressable
               style={s.counterButton}
               disabled={guardsNeeded === 1 || saving}
-              onPress={() => setGuardsNeeded(value => Math.max(1, value - 1))}
+              onPress={() => {
+                const next = Math.max(1, guardsNeededRef.current - 1);
+                guardsNeededRef.current = next;
+                setGuardsNeeded(next);
+              }}
             >
               <Feather
                 name="minus"
@@ -407,7 +584,11 @@ export default function ClientCoverageRequests() {
             <ScalePressable
               style={s.counterButton}
               disabled={saving}
-              onPress={() => setGuardsNeeded(value => Math.min(99, value + 1))}
+              onPress={() => {
+                const next = Math.min(99, guardsNeededRef.current + 1);
+                guardsNeededRef.current = next;
+                setGuardsNeeded(next);
+              }}
             >
               <Feather
                 name="plus"
@@ -416,6 +597,11 @@ export default function ClientCoverageRequests() {
               />
             </ScalePressable>
           </View>
+          {fieldErrors.guardsNeeded ? (
+            <Text accessibilityRole="alert" style={s.error}>
+              {fieldErrors.guardsNeeded}
+            </Text>
+          ) : null}
         </View>
         <Field
           label={t('coverageRequest.notes')}
@@ -432,19 +618,51 @@ export default function ClientCoverageRequests() {
               <View style={s.checkpointSeq}>
                 <Text style={s.checkpointSeqText}>{index + 1}</Text>
               </View>
-              <Text style={s.checkpointName} numberOfLines={1}>{name}</Text>
-              <ScalePressable style={s.checkpointRemove} onPress={() => removeCheckpoint(index)} accessibilityRole="button" accessibilityLabel={t('coverageRequest.removeCheckpoint')}>
-                <Feather name="trash-2" size={scaleFont(18)} color={colors.status.danger} />
+              <Text style={s.checkpointName} numberOfLines={1}>
+                {name}
+              </Text>
+              <ScalePressable
+                style={s.checkpointRemove}
+                onPress={() => removeCheckpoint(index)}
+                accessibilityRole="button"
+                accessibilityLabel={t('coverageRequest.removeCheckpoint')}
+              >
+                <Feather
+                  name="trash-2"
+                  size={scaleFont(18)}
+                  color={colors.status.danger}
+                />
               </ScalePressable>
             </View>
           ))}
           <View style={s.checkpointAddRow}>
-            <TextInput style={[s.input, s.checkpointInput]} value={checkpointDraft} onChangeText={value => { setCheckpointDraft(value); if (checkpointError) setCheckpointError(''); }} placeholder={t('coverageRequest.checkpointPlaceholder')} placeholderTextColor={colors.textGray} maxLength={80} editable={!saving} onSubmitEditing={addCheckpoint} returnKeyType="done" />
-            <ScalePressable style={s.checkpointAdd} onPress={addCheckpoint} disabled={saving} accessibilityRole="button" accessibilityLabel={t('coverageRequest.addCheckpoint')}>
+            <TextInput
+              style={[s.input, s.checkpointInput]}
+              value={checkpointDraft}
+              onChangeText={value => {
+                setCheckpointDraft(value);
+                if (checkpointError) setCheckpointError('');
+              }}
+              placeholder={t('coverageRequest.checkpointPlaceholder')}
+              placeholderTextColor={colors.textGray}
+              maxLength={80}
+              editable={!saving}
+              onSubmitEditing={addCheckpoint}
+              returnKeyType="done"
+            />
+            <ScalePressable
+              style={s.checkpointAdd}
+              onPress={addCheckpoint}
+              disabled={saving}
+              accessibilityRole="button"
+              accessibilityLabel={t('coverageRequest.addCheckpoint')}
+            >
               <Feather name="plus" size={scaleFont(20)} color={colors.white} />
             </ScalePressable>
           </View>
-          {checkpointError ? <Text style={s.error}>{checkpointError}</Text> : null}
+          {checkpointError ? (
+            <Text style={s.error}>{checkpointError}</Text>
+          ) : null}
           {checkpoints.length >= 20 ? (
             <Text style={s.muted}>{t('coverageRequest.checkpointLimit')}</Text>
           ) : null}
@@ -484,17 +702,48 @@ export default function ClientCoverageRequests() {
               </Text>
               {(request.checkpoints?.length ?? 0) > 0 ? (
                 <View style={s.requestCheckpoints}>
-                  <ScalePressable style={s.requestCheckpointToggle} onPress={() => setExpandedRequestId(current => (current === request.id ? null : request.id))} accessibilityRole="button">
-                    <Feather name="map-pin" size={scaleFont(16)} color={colors.primary} />
-                    <Text style={s.requestCheckpointTitle}>{t('coverageRequest.checkpointsCount', { count: request.checkpoints?.length ?? 0 })}</Text>
-                    <Feather name={expandedRequestId === request.id ? 'chevron-up' : 'chevron-down'} size={scaleFont(18)} color={colors.primary} />
+                  <ScalePressable
+                    style={s.requestCheckpointToggle}
+                    onPress={() =>
+                      setExpandedRequestId(current =>
+                        current === request.id ? null : request.id,
+                      )
+                    }
+                    accessibilityRole="button"
+                  >
+                    <Feather
+                      name="map-pin"
+                      size={scaleFont(16)}
+                      color={colors.primary}
+                    />
+                    <Text style={s.requestCheckpointTitle}>
+                      {t('coverageRequest.checkpointsCount', {
+                        count: request.checkpoints?.length ?? 0,
+                      })}
+                    </Text>
+                    <Feather
+                      name={
+                        expandedRequestId === request.id
+                          ? 'chevron-up'
+                          : 'chevron-down'
+                      }
+                      size={scaleFont(18)}
+                      color={colors.primary}
+                    />
                   </ScalePressable>
                   {expandedRequestId === request.id ? (
                     <View style={s.requestCheckpointList}>
                       {(request.checkpoints ?? []).map((point, index) => (
-                        <View key={point.id ?? `${point.name}-${index}`} style={s.requestCheckpointRow}>
-                          <Text style={s.requestCheckpointSeq}>{point.sequence_order ?? index + 1}</Text>
-                          <Text style={s.requestCheckpointName}>{point.name}</Text>
+                        <View
+                          key={point.id ?? `${point.name}-${index}`}
+                          style={s.requestCheckpointRow}
+                        >
+                          <Text style={s.requestCheckpointSeq}>
+                            {point.sequence_order ?? index + 1}
+                          </Text>
+                          <Text style={s.requestCheckpointName}>
+                            {point.name}
+                          </Text>
                         </View>
                       ))}
                     </View>
@@ -588,6 +837,7 @@ export default function ClientCoverageRequests() {
                     style={s.confirmButton}
                     onPress={() => {
                       setSelectedAgencyId(agencyDetails.id);
+                      clearFieldError('agency');
                       setAgencyDetailsOpen(false);
                     }}
                   >
@@ -605,13 +855,10 @@ export default function ClientCoverageRequests() {
         visible={picker !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setPicker(null)}
+        onRequestClose={closePicker}
       >
         <View style={s.overlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setPicker(null)}
-          />
+          <Pressable style={StyleSheet.absoluteFill} onPress={closePicker} />
           <View style={s.picker}>
             <Text style={s.pickerTitle}>
               {picker ? t(`dashboard.${picker}`) : ''}
@@ -682,18 +929,30 @@ function Field({
   onChangeText,
   placeholder,
   multiline,
+  required,
+  error,
+  inputRef,
+  onBlur,
 }: {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
   multiline?: boolean;
+  required?: boolean;
+  error?: string;
+  inputRef?: React.Ref<React.ComponentRef<typeof TextInput>>;
+  onBlur?: () => void;
 }) {
   return (
     <View style={s.field}>
-      <Text style={s.label}>{label}</Text>
+      <Text style={s.label}>
+        {label}
+        {required ? <Text style={s.required}> *</Text> : null}
+      </Text>
       <TextInput
-        style={[s.input, multiline && s.notes]}
+        ref={inputRef}
+        style={[s.input, multiline && s.notes, error ? s.inputError : null]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -701,7 +960,13 @@ function Field({
         multiline={multiline}
         textAlignVertical={multiline ? 'top' : 'center'}
         maxLength={multiline ? 500 : 160}
+        onBlur={onBlur}
       />
+      {error ? (
+        <Text accessibilityRole="alert" style={s.error}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -711,18 +976,30 @@ function Dropdown({
   open,
   disabled,
   onPress,
+  required,
+  error,
 }: {
   label: string;
   value: string;
   open: boolean;
   disabled?: boolean;
   onPress: () => void;
+  required?: boolean;
+  error?: string;
 }) {
   return (
     <View style={s.field}>
-      <Text style={s.label}>{label}</Text>
+      <Text style={s.label}>
+        {label}
+        {required ? <Text style={s.required}> *</Text> : null}
+      </Text>
       <ScalePressable
-        style={[s.input, s.dropdown, disabled && s.disabled]}
+        style={[
+          s.input,
+          s.dropdown,
+          disabled && s.disabled,
+          error ? s.inputError : null,
+        ]}
         disabled={disabled}
         onPress={onPress}
         accessibilityState={{ disabled, expanded: open }}
@@ -736,6 +1013,11 @@ function Dropdown({
           color={colors.primary}
         />
       </ScalePressable>
+      {error ? (
+        <Text accessibilityRole="alert" style={s.error}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -786,21 +1068,88 @@ const s = StyleSheet.create({
     borderColor: colors.border,
   },
   notes: { minHeight: 130, paddingTop: spacing.md },
-  checkpointRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: spacing.sm, backgroundColor: colors.white },
-  checkpointSeq: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.light.background, borderWidth: 1, borderColor: colors.border },
-  checkpointSeqText: { color: colors.primary, fontSize: scaleFont(typography.sizes.xs), fontWeight: typography.weights.semiBold },
-  checkpointName: { flex: 1, color: colors.primary, fontSize: scaleFont(typography.sizes.md) },
-  checkpointRemove: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  checkpointRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  checkpointSeq: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.light.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  checkpointSeqText: {
+    color: colors.primary,
+    fontSize: scaleFont(typography.sizes.xs),
+    fontWeight: typography.weights.semiBold,
+  },
+  checkpointName: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: scaleFont(typography.sizes.md),
+  },
+  checkpointRemove: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   checkpointAddRow: { flexDirection: 'row', gap: spacing.sm },
   checkpointInput: { flex: 1 },
-  checkpointAdd: { width: 50, minHeight: 50, borderRadius: spacing.sm, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  checkpointAdd: {
+    width: 50,
+    minHeight: 50,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   requestCheckpoints: { marginTop: spacing.xs, gap: spacing.xs },
-  requestCheckpointToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  requestCheckpointTitle: { flex: 1, color: colors.primary, fontSize: scaleFont(typography.sizes.sm), fontWeight: typography.weights.semiBold },
+  requestCheckpointToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  requestCheckpointTitle: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: scaleFont(typography.sizes.sm),
+    fontWeight: typography.weights.semiBold,
+  },
   requestCheckpointList: { gap: spacing.xs, paddingLeft: spacing.sm },
-  requestCheckpointRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  requestCheckpointSeq: { width: 22, height: 22, borderRadius: 11, textAlign: 'center', textAlignVertical: 'center', backgroundColor: colors.light.background, color: colors.primary, fontSize: scaleFont(typography.sizes.xs), fontWeight: typography.weights.semiBold, overflow: 'hidden' },
-  requestCheckpointName: { flex: 1, color: colors.primary, fontSize: scaleFont(typography.sizes.sm) },
+  requestCheckpointRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  requestCheckpointSeq: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: colors.light.background,
+    color: colors.primary,
+    fontSize: scaleFont(typography.sizes.xs),
+    fontWeight: typography.weights.semiBold,
+    overflow: 'hidden',
+  },
+  requestCheckpointName: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: scaleFont(typography.sizes.sm),
+  },
   agenciesSection: { gap: spacing.sm },
   agencyCard: {
     minHeight: 64,
@@ -861,6 +1210,12 @@ const s = StyleSheet.create({
   error: {
     color: colors.status.danger,
     fontSize: scaleFont(typography.sizes.sm),
+  },
+  required: {
+    color: colors.status.danger,
+  },
+  inputError: {
+    borderColor: colors.status.danger,
   },
   submit: {
     minHeight: 50,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
 
@@ -12,6 +12,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { appAlert } from '../../../services/alertService';
 
 /** Burnt-orange accent used for pending invoices (amount, chip, accent bar). */
 const AMBER = '#B9640A';
@@ -236,7 +237,7 @@ export default function ClientInvoices() {
 
   /** No payment gateway is wired up yet — the agency records the payment. */
   const payNow = (invoice: ClientInvoice) =>
-    Alert.alert(
+    appAlert.alert(
       t('client.invoicePaymentUnavailableTitle'),
       `${invoice.invoice_code} · ${formatINR(invoice.amount)}\n\n${t(
         'client.invoicePaymentUnavailable',

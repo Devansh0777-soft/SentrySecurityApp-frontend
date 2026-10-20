@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -25,6 +24,7 @@ import {
   scaleWidth as w,
 } from '../../../styles/dimensions';
 import type { GuardStackParamList } from '../../../navigation/types';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<
   GuardStackParamList,
@@ -54,15 +54,18 @@ const GuardEmergencyContactScreen: React.FC<Props> = ({ navigation }) => {
   const save = async () => {
     const validationError = validate();
     if (validationError) {
-      Alert.alert(t('guardProfile.emergencyContact'), validationError);
+      appAlert.alert(t('guardProfile.emergencyContact'), validationError, {
+        type: 'error',
+      });
       return;
     }
     try {
       setSaving(true);
       await new Promise<void>(resolve => setTimeout(() => resolve(), 600));
-      Alert.alert(
+      appAlert.alert(
         t('guardProfile.emergencySaved'),
         t('guardProfile.emergencySavedHint'),
+        { type: 'success' },
       );
     } finally {
       setSaving(false);
@@ -139,7 +142,9 @@ const GuardEmergencyContactScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel={t('guardProfile.saveChanges')}
           >
             <Text style={s.saveText}>
-              {saving ? t('guardProfile.saving') : t('guardProfile.saveChanges')}
+              {saving
+                ? t('guardProfile.saving')
+                : t('guardProfile.saveChanges')}
             </Text>
           </ScalePressable>
         </ScrollView>

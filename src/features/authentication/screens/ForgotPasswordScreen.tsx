@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -23,6 +22,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { isValidIdentifier } from '../../../utils/validation';
 import { authService } from '../../../services/authService';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
@@ -33,7 +33,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSendOtp = async () => {
     if (!isValidIdentifier(identifier)) {
-      Alert.alert(t('auth.invalidDetails'), t('auth.enterValidIdentifier'));
+      appAlert.alert(t('auth.invalidDetails'), t('auth.enterValidIdentifier'), {
+        type: 'error',
+      });
       return;
     }
     try {
@@ -41,9 +43,10 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
       await authService.requestPasswordReset(identifier.trim());
       navigation.navigate('VerifyOTP');
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('auth.couldNotSendOtp'),
         error instanceof Error ? error.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setIsSubmitting(false);
@@ -58,63 +61,65 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
       >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel={t('auth.goBack')}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
-        </TouchableOpacity>
-        <LanguageSelector />
-      </View>
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              accessibilityLabel={t('auth.goBack')}
+            >
+              <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
+            </TouchableOpacity>
+            <LanguageSelector />
+          </View>
 
-      <Image
-        source={require('../../../assets/images/login-shield-logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+          <Image
+            source={require('../../../assets/images/login-shield-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
-      <Text style={styles.heading}>{t('auth.forgotTitle')}</Text>
-      <Text style={styles.subtitle}>{t('auth.forgotSubtitle')}</Text>
+          <Text style={styles.heading}>{t('auth.forgotTitle')}</Text>
+          <Text style={styles.subtitle}>{t('auth.forgotSubtitle')}</Text>
 
-      <Text style={styles.fieldLabel}>{t('auth.emailOrMobile')}</Text>
-      <View style={styles.inputWrapper}>
-        <Feather name="user" size={scaleFont(24)} color="#A3A3A3" />
-        <TextInput
-          value={identifier}
-          onChangeText={setIdentifier}
-          style={styles.input}
-          placeholder={t('auth.identifierPlaceholder')}
-          placeholderTextColor="#A3A3A3"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-        />
-      </View>
+          <Text style={styles.fieldLabel}>{t('auth.emailOrMobile')}</Text>
+          <View style={styles.inputWrapper}>
+            <Feather name="user" size={scaleFont(24)} color="#A3A3A3" />
+            <TextInput
+              value={identifier}
+              onChangeText={setIdentifier}
+              style={styles.input}
+              placeholder={t('auth.identifierPlaceholder')}
+              placeholderTextColor="#A3A3A3"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+          </View>
 
-      <TouchableOpacity
-        style={[styles.sendOtpButton, isSubmitting && { opacity: 0.65 }]}
-        onPress={handleSendOtp}
-        disabled={isSubmitting}
-      >
-        <Text style={styles.sendOtpText}>
-          {isSubmitting ? t('auth.sending') : t('auth.sendOtp')}
-        </Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sendOtpButton, isSubmitting && { opacity: 0.65 }]}
+            onPress={handleSendOtp}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.sendOtpText}>
+              {isSubmitting ? t('auth.sending') : t('auth.sendOtp')}
+            </Text>
+          </TouchableOpacity>
 
-      <View style={styles.rememberRow}>
-        <Text style={styles.rememberText}>{t('auth.rememberPassword')}</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.loginLink}> {t('auth.login')}</Text>
-        </TouchableOpacity>
-      </View>
-      </ScrollView>
+          <View style={styles.rememberRow}>
+            <Text style={styles.rememberText}>
+              {t('auth.rememberPassword')}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.loginLink}> {t('auth.login')}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

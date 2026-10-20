@@ -125,7 +125,8 @@ const hi = {
       requestUpdatedHint: 'क्लाइंट अनुरोध की स्थिति सेव हो गई है।',
       unableToUpdate: 'अनुरोध अपडेट नहीं हो सका',
       checkpointsTitle: 'अनुरोधित गश्त चेकपॉइंट',
-      checkpointsHint: 'क्लाइंट द्वारा जोड़े गए। स्वीकृति पर इन्हें साइट पर कॉपी किया जाता है।',
+      checkpointsHint:
+        'क्लाइंट द्वारा जोड़े गए। स्वीकृति पर इन्हें साइट पर कॉपी किया जाता है।',
       statuses: {
         pending: 'लंबित',
         approved: 'स्वीकृत',
@@ -139,7 +140,8 @@ const hi = {
         'यह गार्ड पहले से किसी अन्य सक्रिय साइट पर नियुक्त है। यहाँ नियुक्ति से पहले वह नियुक्ति समाप्त करें।',
       DUPLICATE_ASSIGNMENT: 'यह गार्ड इस साइट पर पहले से नियुक्त है।',
       SITE_CAPACITY_REACHED: 'इस साइट की गार्ड क्षमता पूरी हो चुकी है।',
-      APPROVAL_REQUIRED: 'गार्ड नियुक्त करने से पहले इस अनुरोध को स्वीकृत करें।',
+      APPROVAL_REQUIRED:
+        'गार्ड नियुक्त करने से पहले इस अनुरोध को स्वीकृत करें।',
       fallback: 'नियुक्ति पूरी नहीं हो सकी। कृपया पुनः प्रयास करें।',
     },
     addGuardForm: {
@@ -190,7 +192,8 @@ const hi = {
       ageError: 'आयु 18 से 65 के बीच पूर्णांक होनी चाहिए।',
       salaryError:
         'वेतन और भत्ते शून्य या अधिक, अधिकतम दो दशमलव अंकों में दर्ज करें।',
-      success: 'गार्ड सफलतापूर्वक जोड़ा गया।',
+      successTitle: 'गार्ड सफलतापूर्वक जोड़ा गया',
+      success: 'गार्ड सफलतापूर्वक जोड़ दिया गया है।',
       failure: 'गार्ड नहीं जुड़ा। फिर कोशिश करें।',
       saving: 'सहेजा जा रहा है…',
       search: 'विकल्प खोजें',
@@ -202,6 +205,8 @@ const hi = {
       back: 'वापस',
       continue: 'जारी रखें',
       getStarted: 'शुरू करें',
+      ok: 'ठीक है',
+      cancel: 'रद्द करें',
     },
 
     auth: {
@@ -518,7 +523,8 @@ const hi = {
       notes: 'नोट्स',
       notesPlaceholder: 'तारीखें, शिफ्ट समय, विशेष आवश्यकताएं…',
       checkpointsTitle: 'गश्त चेकपॉइंट',
-      checkpointsHint: 'असाइन गार्ड को क्रम से जिन चेकपॉइंट पर जाना है, उन्हें जोड़ें।',
+      checkpointsHint:
+        'असाइन गार्ड को क्रम से जिन चेकपॉइंट पर जाना है, उन्हें जोड़ें।',
       checkpointPlaceholder: 'जैसे Main Entrance',
       addCheckpoint: '+ चेकपॉइंट जोड़ें',
       removeCheckpoint: 'चेकपॉइंट हटाएँ',
@@ -532,6 +538,13 @@ const hi = {
       myRequests: 'मेरे अनुरोध',
       none: 'अभी कोई कवरेज अनुरोध नहीं है।',
       required: 'सभी आवश्यक फ़ील्ड भरें।',
+      eventNameRequired: 'इवेंट का नाम आवश्यक है।',
+      stateRequired: 'कृपया एक राज्य चुनें।',
+      districtRequired: 'कृपया एक ज़िला चुनें।',
+      cityRequired: 'कृपया एक शहर चुनें।',
+      siteLocationRequired: 'साइट या इवेंट स्थान आवश्यक है।',
+      agencyRequired: 'कृपया एक एजेंसी चुनें।',
+      guardsNeededInvalid: '1 से 99 के बीच गार्ड की संख्या दर्ज करें।',
       sentTitle: 'अनुरोध भेजा गया',
       sentMessage: 'आपका कवरेज अनुरोध जमा हो गया है।',
       sendFailed: 'अनुरोध नहीं भेजा जा सका।',
@@ -665,7 +678,8 @@ const hi = {
       cameraPermissionTitle: 'कैमरा एक्सेस आवश्यक है',
       cameraPermissionBody: 'फ़ोटो लेने के लिए कैमरा एक्सेस आवश्यक है।',
       photoPermissionTitle: 'फ़ोटो एक्सेस आवश्यक है',
-      photoPermissionBody: 'फ़ोटो चुनने के लिए फ़ोटो लाइब्रेरी एक्सेस आवश्यक है।',
+      photoPermissionBody:
+        'फ़ोटो चुनने के लिए फ़ोटो लाइब्रेरी एक्सेस आवश्यक है।',
       takePhoto: 'फ़ोटो लें',
       chooseFromGallery: 'गैलरी से चुनें',
       removePhoto: 'फ़ोटो हटाएं',
@@ -766,7 +780,8 @@ const hi = {
       guardAddUnavailable: 'गार्ड जोड़ने का फॉर्म जल्द जोड़ा जाएगा।',
       noMatchingLocations: 'कोई मेल खाता स्थान नहीं मिला।',
       checkpointsTitle: 'गश्त चेकपॉइंट',
-      checkpointsHint: 'चेकपॉइंट इसी साइट को असाइन होते हैं। तैनात गार्ड इन्हें Patrol में उसी क्रम में देखता है।',
+      checkpointsHint:
+        'चेकपॉइंट इसी साइट को असाइन होते हैं। तैनात गार्ड इन्हें Patrol में उसी क्रम में देखता है।',
       checkpointNamePlaceholder: 'चेकपॉइंट का नाम, जैसे Main Gate',
       addCheckpoint: 'चेकपॉइंट जोड़ें',
       checkpointsLoading: 'चेकपॉइंट लोड हो रहे हैं…',
@@ -776,7 +791,8 @@ const hi = {
       checkpointRemoveFailed: 'चेकपॉइंट हटाया नहीं जा सका।',
       noCheckpointsYet: 'अभी कोई चेकपॉइंट नहीं है। ऊपर पहला गश्त पड़ाव जोड़ें।',
       removeCheckpointTitle: 'चेकपॉइंट हटाएँ',
-      removeCheckpointConfirm: '“{{name}}” हटाएँ? गार्ड को यह Patrol में नहीं दिखेगा।',
+      removeCheckpointConfirm:
+        '“{{name}}” हटाएँ? गार्ड को यह Patrol में नहीं दिखेगा।',
     },
     event: {
       title: 'ईवेंट विवरण',
@@ -946,7 +962,8 @@ const hi = {
         emptyTitle: 'कोई चेकपॉइंट असाइन नहीं है',
         emptyBody: 'आपकी साइट पर असाइन होने पर गश्त चेकपॉइंट यहाँ दिखेंगे।',
         noSiteTitle: 'कोई सक्रिय साइट असाइन नहीं है',
-        noSiteBody: 'गश्त चेकपॉइंट दिखने से पहले एजेंसी को आपको साइट पर असाइन करना होगा।',
+        noSiteBody:
+          'गश्त चेकपॉइंट दिखने से पहले एजेंसी को आपको साइट पर असाइन करना होगा।',
         markVisited: 'विज़िट दर्ज करें',
         visited: 'विज़िट हुआ',
         notVisited: 'असाइन किया गया चेकपॉइंट',
@@ -1131,7 +1148,8 @@ const hi = {
       alreadyPaid: 'इस पेरोल का भुगतान पहले ही कर दिया गया है।',
       guardNotFound: 'गार्ड नहीं मिला।',
       confirmPayTitle: 'भुगतान किया गया के रूप में चिह्नित करें',
-      confirmPayMessage: '{{name}} के {{period}} के {{amount}} के पेरोल को भुगतान किया गया चिह्नित करें? यह बाह्य भुगतान दर्ज करता है और इसे पूर्ववत नहीं किया जा सकता।',
+      confirmPayMessage:
+        '{{name}} के {{period}} के {{amount}} के पेरोल को भुगतान किया गया चिह्नित करें? यह बाह्य भुगतान दर्ज करता है और इसे पूर्ववत नहीं किया जा सकता।',
       confirm: 'पुष्टि करें',
       cancel: 'रद्द करें',
       outstandingAdvance: '{{amount}} बकाया',
@@ -1141,7 +1159,6 @@ const hi = {
       guardInfoUnavailable: 'गार्ड की जानकारी उपलब्ध नहीं है।',
       periodLabel: '{{month}}',
     },
-
   },
 };
 

@@ -17,6 +17,7 @@ export const lightTheme = {
     danger: colors.status.danger,
     info: colors.status.info,
     review: colors.status.review,
+    warning: colors.status.warning,
   },
 } as const;
 
@@ -37,5 +38,6 @@ export const darkTheme = {
     danger: colors.status.danger,
     info: colors.status.info,
     review: colors.status.review,
+    warning: colors.status.warning,
   },
 } as const;

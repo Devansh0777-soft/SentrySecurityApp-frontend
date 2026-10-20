@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
@@ -18,6 +18,7 @@ import {
 } from '../../../services/guardService';
 import GuardSelfieCapture from '../components/GuardSelfieCapture';
 import type { GuardStackParamList } from '../../../navigation/types';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<GuardStackParamList, 'GuardDutyCapture'>;
 
@@ -91,11 +92,12 @@ const GuardDutyCaptureScreen = ({ navigation, route }: Props) => {
       }
 
       // Exactly one alert per failed user action.
-      Alert.alert(
+      appAlert.alert(
         isClockIn
           ? t('guard.duty.clockInFailed')
           : t('guard.duty.clockOutFailed'),
         message,
+        { type: 'error' },
       );
     } finally {
       submittingRef.current = false;

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   ScrollView,
   StatusBar,
@@ -40,6 +39,7 @@ import {
   indiaLocationService,
   type IndiaLocationOption,
 } from '../../../services/indiaLocationService';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyProfile'>;
 type Form = Pick<
@@ -92,9 +92,10 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
     try {
       setForm({ ...emptyForm, ...(await accountService.getAgencyProfile()) });
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.profile'),
         error instanceof Error ? error.message : t('dashboard.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setLoading(false);
@@ -133,22 +134,29 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
       !form.email.trim() ||
       !form.mobile_number.trim()
     ) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.missingDetails'),
         t('dashboard.profileRequired'),
+        { type: 'error' },
       );
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      Alert.alert(t('dashboard.profile'), t('auth.invalidEmail'));
+      appAlert.alert(t('dashboard.profile'), t('auth.invalidEmail'), {
+        type: 'error',
+      });
       return;
     }
     if (!/^(?:\+91)?[6-9]\d{9}$/.test(form.mobile_number.trim())) {
-      Alert.alert(t('dashboard.profile'), t('auth.invalidMobile'));
+      appAlert.alert(t('dashboard.profile'), t('auth.invalidMobile'), {
+        type: 'error',
+      });
       return;
     }
     if (!/^[1-9]\d{5}$/.test(form.pincode.trim())) {
-      Alert.alert(t('dashboard.profile'), t('details.enterValidPincode'));
+      appAlert.alert(t('dashboard.profile'), t('details.enterValidPincode'), {
+        type: 'error',
+      });
       return;
     }
     try {
@@ -167,11 +175,14 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
         mobileNumber: form.mobile_number.trim(),
       });
       setForm({ ...emptyForm, ...response.data });
-      Alert.alert(t('dashboard.profile'), t('dashboard.changesSaved'));
+      appAlert.alert(t('dashboard.profile'), t('dashboard.changesSaved'), {
+        type: 'success',
+      });
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.profile'),
         error instanceof Error ? error.message : t('dashboard.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);
@@ -189,10 +200,7 @@ const AgencyProfileScreen: React.FC<Props> = ({ navigation }) => {
     if (tab === 'incidents') navigation.navigate('AgencyIncidents');
     if (tab === 'plan') navigation.navigate('AgencyPlan');
   };
-  const initial = (form.full_name || 'U')
-    .trim()
-    .charAt(0)
-    .toUpperCase();
+  const initial = (form.full_name || 'U').trim().charAt(0).toUpperCase();
   const pickerOptions = useMemo(() => {
     const options =
       picker === 'state' ? states : picker === 'district' ? districts : cities;

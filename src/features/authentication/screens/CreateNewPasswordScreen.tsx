@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -24,6 +23,7 @@ import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { passwordError } from '../../../utils/validation';
 import { authService } from '../../../services/authService';
 import { session } from '../../../services/session';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreateNewPassword'>;
 
@@ -38,11 +38,11 @@ const CreateNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const handleResetPassword = async () => {
     const error = passwordError(newPassword);
     if (error) {
-      Alert.alert(t('auth.invalidPassword'), error);
+      appAlert.error(t('auth.invalidPassword'), error);
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert(
+      appAlert.error(
         t('auth.passwordsMismatch'),
         'Confirm password must match the new password.',
       );
@@ -56,7 +56,7 @@ const CreateNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
       await authService.resetPassword(identifier, newPassword, confirmPassword);
       navigation.navigate('PasswordUpdated');
     } catch (error) {
-      Alert.alert(
+      appAlert.error(
         'Could not reset password',
         error instanceof Error ? error.message : 'Please try again.',
       );
@@ -73,104 +73,104 @@ const CreateNewPasswordScreen: React.FC<Props> = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
       >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel={t('auth.goBack')}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
-        </TouchableOpacity>
-        <LanguageSelector />
-      </View>
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              accessibilityLabel={t('auth.goBack')}
+            >
+              <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
+            </TouchableOpacity>
+            <LanguageSelector />
+          </View>
 
-      <Image
-        source={require('../../../assets/images/login-shield-logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-
-      <Text style={styles.heading}>Create New{`\n`}Password</Text>
-      <Text style={styles.subtitle}>{t('auth.newPasswordSubtitle')}</Text>
-
-      <Text style={styles.fieldLabel}>{t('auth.newPassword')}</Text>
-      <View style={styles.inputWrapper}>
-        <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
-        <TextInput
-          value={newPassword}
-          onChangeText={setNewPassword}
-          style={styles.input}
-          placeholder={t('auth.enterNewPassword')}
-          placeholderTextColor="#A3A3A3"
-          secureTextEntry={!newPasswordVisible}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity
-          style={styles.eyeButton}
-          onPress={() => setNewPasswordVisible(current => !current)}
-          accessibilityLabel={
-            newPasswordVisible ? 'Hide password' : 'Show password'
-          }
-        >
-          <Feather
-            name={newPasswordVisible ? 'eye-off' : 'eye'}
-            size={scaleFont(24)}
-            color={colors.primary}
+          <Image
+            source={require('../../../assets/images/login-shield-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
-        </TouchableOpacity>
-      </View>
 
-      <Text style={styles.fieldLabel}>
-        {t('auth.confirmPassword')}
-      </Text>
-      <View style={styles.inputWrapper}>
-        <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
-        <TextInput
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          style={styles.input}
-          placeholder={t('auth.confirmNewPassword')}
-          placeholderTextColor="#A3A3A3"
-          secureTextEntry={!confirmPasswordVisible}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity
-          style={styles.eyeButton}
-          onPress={() => setConfirmPasswordVisible(current => !current)}
-          accessibilityLabel={
-            confirmPasswordVisible ? 'Hide password' : 'Show password'
-          }
-        >
-          <Feather
-            name={confirmPasswordVisible ? 'eye-off' : 'eye'}
-            size={scaleFont(24)}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.heading}>Create New{`\n`}Password</Text>
+          <Text style={styles.subtitle}>{t('auth.newPasswordSubtitle')}</Text>
 
-      <TouchableOpacity
-        style={[styles.resetButton, isSubmitting && { opacity: 0.65 }]}
-        onPress={handleResetPassword}
-        disabled={isSubmitting}
-      >
-        <Text style={styles.resetButtonText}>
-          {isSubmitting ? 'Resetting...' : 'Reset Password'}
-        </Text>
-      </TouchableOpacity>
+          <Text style={styles.fieldLabel}>{t('auth.newPassword')}</Text>
+          <View style={styles.inputWrapper}>
+            <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
+            <TextInput
+              value={newPassword}
+              onChangeText={setNewPassword}
+              style={styles.input}
+              placeholder={t('auth.enterNewPassword')}
+              placeholderTextColor="#A3A3A3"
+              secureTextEntry={!newPasswordVisible}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setNewPasswordVisible(current => !current)}
+              accessibilityLabel={
+                newPasswordVisible ? 'Hide password' : 'Show password'
+              }
+            >
+              <Feather
+                name={newPasswordVisible ? 'eye-off' : 'eye'}
+                size={scaleFont(24)}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.rememberRow}>
-        <Text style={styles.rememberText}>{t('auth.rememberPassword')}</Text>
-        <TouchableOpacity onPress={() => navigation.popToTop()}>
-          <Text style={styles.loginLink}> {t('auth.login')}</Text>
-        </TouchableOpacity>
-      </View>
-      </ScrollView>
+          <Text style={styles.fieldLabel}>{t('auth.confirmPassword')}</Text>
+          <View style={styles.inputWrapper}>
+            <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
+            <TextInput
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              style={styles.input}
+              placeholder={t('auth.confirmNewPassword')}
+              placeholderTextColor="#A3A3A3"
+              secureTextEntry={!confirmPasswordVisible}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setConfirmPasswordVisible(current => !current)}
+              accessibilityLabel={
+                confirmPasswordVisible ? 'Hide password' : 'Show password'
+              }
+            >
+              <Feather
+                name={confirmPasswordVisible ? 'eye-off' : 'eye'}
+                size={scaleFont(24)}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.resetButton, isSubmitting && { opacity: 0.65 }]}
+            onPress={handleResetPassword}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.resetButtonText}>
+              {isSubmitting ? 'Resetting...' : 'Reset Password'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.rememberRow}>
+            <Text style={styles.rememberText}>
+              {t('auth.rememberPassword')}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.popToTop()}>
+              <Text style={styles.loginLink}> {t('auth.login')}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

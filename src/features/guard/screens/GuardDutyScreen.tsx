@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Linking,
   RefreshControl,
@@ -36,10 +35,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { GuardStackParamList } from '../../../navigation/types';
 import { useDutyTimer } from '../hooks/useDutyTimer';
 import { useTranslation } from 'react-i18next';
-import {
-  takeSlot,
-  awaitBootPrefetch,
-} from '../../../services/bootPrefetch';
+import { takeSlot, awaitBootPrefetch } from '../../../services/bootPrefetch';
+import { appAlert } from '../../../services/alertService';
 
 // Control room support line used by the phone button on the duty screen.
 const CONTROL_ROOM_NUMBER = '9464487068';
@@ -125,7 +122,7 @@ const GuardDutyScreen = () => {
   const timer = useDutyTimer(activeLog?.clock_in_at);
   // Backend-authoritative 24-hour cycle state (display-only UX guard; the
   // backend re-validates every clock-in/out).
-  const canStart = duty ? (duty.can_start ?? duty.status === 'off_duty') : false;
+  const canStart = duty ? duty.can_start ?? duty.status === 'off_duty' : false;
   const nextDutyAt = duty?.next_start_at ?? null;
   const coolingDown = !isOnDuty && !canStart;
   const notSetLabel = t('guard.duty.scheduleNotSet');
@@ -145,7 +142,7 @@ const GuardDutyScreen = () => {
 
   const startDuty = () => {
     if (!guard?.site_id) {
-      Alert.alert(
+      appAlert.warning(
         t('guard.duty.noActiveSite'),
         t('guard.duty.noActiveSiteHint'),
       );
@@ -154,7 +151,7 @@ const GuardDutyScreen = () => {
     if (!canStart) {
       // 24-hour duty cycle: explain why, using the backend-computed next
       // allowed start time (never a hardcoded reset time).
-      Alert.alert(
+      appAlert.warning(
         t('guard.duty.dutyCycleTitle'),
         nextDutyAt
           ? t('guard.duty.dutyCycleWait', { time: formatClock(nextDutyAt) })
@@ -164,7 +161,8 @@ const GuardDutyScreen = () => {
     }
     navigation.navigate('GuardDutyCapture', { mode: 'clock_in' });
   };
-  const endDuty = () => navigation.navigate('GuardDutyCapture', { mode: 'clock_out' });
+  const endDuty = () =>
+    navigation.navigate('GuardDutyCapture', { mode: 'clock_out' });
   const handleTab = (tab: GuardTab) => {
     setActiveTab(tab);
     if (tab === 'report') {
@@ -268,19 +266,19 @@ const GuardDutyScreen = () => {
               {isOnDuty
                 ? t('guard.duty.tapToClockOut')
                 : coolingDown
-                  ? t('guard.duty.dutyCycleTitle')
-                  : t('guard.duty.tapToClockIn')}
+                ? t('guard.duty.dutyCycleTitle')
+                : t('guard.duty.tapToClockIn')}
             </Text>
             <Text style={styles.dutyHint}>
               {isOnDuty
                 ? t('guard.duty.clockOutPhotoNotice')
                 : coolingDown
-                  ? nextDutyAt
-                    ? t('guard.duty.nextDutyHint', {
-                        time: formatClock(nextDutyAt),
-                      })
-                    : t('guard.duty.dutyCycleNoTime')
-                  : t('guard.duty.clockInPhotoRequired')}
+                ? nextDutyAt
+                  ? t('guard.duty.nextDutyHint', {
+                      time: formatClock(nextDutyAt),
+                    })
+                  : t('guard.duty.dutyCycleNoTime')
+                : t('guard.duty.clockInPhotoRequired')}
             </Text>
           </ScalePressable>
 

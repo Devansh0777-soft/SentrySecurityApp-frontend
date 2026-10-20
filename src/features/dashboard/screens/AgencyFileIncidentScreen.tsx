@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   Image,
   Keyboard,
@@ -19,7 +18,10 @@ import {
   type LayoutChangeEvent,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +39,7 @@ import {
   scaleWidth as w,
 } from '../../../styles/dimensions';
 import ScalePressable from '../../../components/common/ScalePressable';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyFileIncident'>;
 
@@ -56,7 +59,10 @@ type Photo = {
   type: string;
 };
 
-const severityOptions: Array<{ value: 'Low' | 'Medium' | 'High'; labelKey: string }> = [
+const severityOptions: Array<{
+  value: 'Low' | 'Medium' | 'High';
+  labelKey: string;
+}> = [
   { value: 'Low', labelKey: 'low' },
   { value: 'Medium', labelKey: 'medium' },
   { value: 'High', labelKey: 'high' },
@@ -89,9 +95,10 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
     try {
       setSites(await agencyApiService.getSites());
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.couldNotLoadSites'),
         error instanceof Error ? error.message : t('dashboard.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSitesLoading(false);
@@ -135,7 +142,10 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
   // Positioning: open below the input when there is room, otherwise flip the
   // menu above it, and always clamp it inside the visible screen area.
   const siteRoomBelow = siteAnchor
-    ? siteOverlayH - (siteAnchor.y + siteAnchor.height) - insets.bottom - SITE_MENU_GAP
+    ? siteOverlayH -
+      (siteAnchor.y + siteAnchor.height) -
+      insets.bottom -
+      SITE_MENU_GAP
     : 0;
   const siteRoomAbove = siteAnchor
     ? siteAnchor.y - insets.top - SITE_MENU_GAP
@@ -176,17 +186,27 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
       if (response.didCancel) return;
       if (response.errorCode) {
         const message = (response.errorMessage || '').toLowerCase();
-        if (response.errorCode === 'permission' || message.includes('permission')) {
-          Alert.alert(
+        if (
+          response.errorCode === 'permission' ||
+          message.includes('permission')
+        ) {
+          appAlert.alert(
             t('dashboard.photoPermissionTitle'),
             t('dashboard.photoPermissionBody'),
+            { type: 'warning' },
           );
           return;
         }
-        Alert.alert(t('dashboard.couldNotFile'), response.errorMessage || t('dashboard.tryAgain'));
+        appAlert.error(
+          t('dashboard.couldNotFile'),
+          response.errorMessage || t('dashboard.tryAgain'),
+        );
         return;
       }
-      const assets = (response.assets ?? []).filter((a): a is { uri: string; fileName?: string; type?: string } => Boolean(a?.uri));
+      const assets = (response.assets ?? []).filter(
+        (a): a is { uri: string; fileName?: string; type?: string } =>
+          Boolean(a?.uri),
+      );
       const incoming: Photo[] = assets.map(asset => ({
         uri: asset.uri,
         fileName: asset.fileName || 'image.jpg',
@@ -194,7 +214,9 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
       }));
       setPhotos(prev => [...prev, ...incoming]);
     } catch {
-      Alert.alert(t('dashboard.couldNotFile'), t('dashboard.tryAgain'));
+      appAlert.alert(t('dashboard.couldNotFile'), t('dashboard.tryAgain'), {
+        type: 'error',
+      });
     }
   }, [remainingSlots, t]);
 
@@ -206,15 +228,18 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
           PermissionsAndroid.PERMISSIONS.CAMERA,
           {
             title: t('dashboard.cameraPermissionTitle') ?? 'Camera access',
-            message: t('dashboard.cameraPermissionBody') ?? 'Camera access is required to take a photo.',
+            message:
+              t('dashboard.cameraPermissionBody') ??
+              'Camera access is required to take a photo.',
             buttonPositive: t('dashboard.ok') ?? 'OK',
             buttonNegative: t('dashboard.cancel') ?? 'Cancel',
           },
         );
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert(
+          appAlert.alert(
             t('dashboard.cameraPermissionTitle'),
             t('dashboard.cameraPermissionBody'),
+            { type: 'warning' },
           );
           return;
         }
@@ -227,17 +252,27 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
       });
       if (response.didCancel) return;
       if (response.errorCode) {
-        Alert.alert(t('dashboard.couldNotFile'), response.errorMessage || t('dashboard.tryAgain'));
+        appAlert.alert(
+          t('dashboard.couldNotFile'),
+          response.errorMessage || t('dashboard.tryAgain'),
+          { type: 'error' },
+        );
         return;
       }
       const asset = response.assets?.[0];
       if (!asset?.uri) return;
       setPhotos(prev => [
         ...prev,
-        { uri: asset.uri!, fileName: asset.fileName || 'image.jpg', type: asset.type || 'image/jpeg' },
+        {
+          uri: asset.uri!,
+          fileName: asset.fileName || 'image.jpg',
+          type: asset.type || 'image/jpeg',
+        },
       ]);
     } catch {
-      Alert.alert(t('dashboard.couldNotFile'), t('dashboard.tryAgain'));
+      appAlert.alert(t('dashboard.couldNotFile'), t('dashboard.tryAgain'), {
+        type: 'error',
+      });
     }
   }, [remainingSlots, t]);
 
@@ -247,7 +282,11 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
 
   const submit = async () => {
     if (!site || !notes.trim()) {
-      Alert.alert(t('dashboard.missingDetails'), t('dashboard.selectSiteAndDescribe'));
+      appAlert.alert(
+        t('dashboard.missingDetails'),
+        t('dashboard.selectSiteAndDescribe'),
+        { type: 'error' },
+      );
       return;
     }
     try {
@@ -265,10 +304,15 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
       }
       await agencyApiService.createIncident(body);
       navigation.navigate('AgencyIncidents');
+      appAlert.success(
+        t('dashboard.incidentFiled'),
+        t('dashboard.incidentRecorded'),
+      );
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.couldNotFile'),
         error instanceof Error ? error.message : t('dashboard.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSubmitting(false);
@@ -337,7 +381,12 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
                   accessibilityState={{ selected: severity === item.value }}
                   accessibilityLabel={`Severity ${item.value}`}
                 >
-                  <Text style={[s.severityText, severity === item.value && s.activeSeverityText]}>
+                  <Text
+                    style={[
+                      s.severityText,
+                      severity === item.value && s.activeSeverityText,
+                    ]}
+                  >
                     {t(`dashboard.${item.labelKey}`)}
                   </Text>
                 </ScalePressable>
@@ -362,7 +411,8 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
 
           <View style={s.field}>
             <Text style={s.label}>
-              {t('dashboard.uploadPhotos')} <Text style={s.optional}>{t('dashboard.optional')}</Text>
+              {t('dashboard.uploadPhotos')}{' '}
+              <Text style={s.optional}>{t('dashboard.optional')}</Text>
             </Text>
             <View style={s.photoActions}>
               <ScalePressable
@@ -373,7 +423,9 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityLabel={t('dashboard.chooseFromGallery')}
               >
                 <Feather name="image" size={f(20)} color={colors.primary} />
-                <Text style={s.photoButtonText}>{t('dashboard.addPhotos')}</Text>
+                <Text style={s.photoButtonText}>
+                  {t('dashboard.addPhotos')}
+                </Text>
               </ScalePressable>
               <ScalePressable
                 style={s.photoButton}
@@ -383,7 +435,9 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityLabel={t('dashboard.takePhoto')}
               >
                 <Feather name="camera" size={f(20)} color={colors.primary} />
-                <Text style={s.photoButtonText}>{t('dashboard.takePhoto')}</Text>
+                <Text style={s.photoButtonText}>
+                  {t('dashboard.takePhoto')}
+                </Text>
               </ScalePressable>
             </View>
             {photos.length > 0 && (
@@ -399,7 +453,9 @@ const AgencyFileIncidentScreen: React.FC<Props> = ({ navigation }) => {
                       style={s.photoRemove}
                       onPress={() => removePhoto(index)}
                       accessibilityRole="button"
-                      accessibilityLabel={`${t('dashboard.removePhoto')} ${index + 1}`}
+                      accessibilityLabel={`${t('dashboard.removePhoto')} ${
+                        index + 1
+                      }`}
                     >
                       <Text style={s.photoRemoveText}>×</Text>
                     </ScalePressable>
@@ -483,7 +539,12 @@ const s = StyleSheet.create({
     paddingHorizontal: w(14),
     backgroundColor: colors.white,
   },
-  iconButton: { minWidth: w(44), minHeight: w(44), alignItems: 'center', justifyContent: 'center' },
+  iconButton: {
+    minWidth: w(44),
+    minHeight: w(44),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     color: colors.primary,
     fontSize: f(20),
@@ -572,7 +633,12 @@ const s = StyleSheet.create({
     color: colors.primary,
     textAlignVertical: 'top',
   },
-  counter: { alignSelf: 'flex-end', color: '#999', fontSize: f(11), marginTop: h(3) },
+  counter: {
+    alignSelf: 'flex-end',
+    color: '#999',
+    fontSize: f(11),
+    marginTop: h(3),
+  },
   photoActions: { flexDirection: 'row', gap: w(10), marginBottom: h(10) },
   photoButton: {
     flex: 1,
@@ -584,9 +650,25 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.white,
   },
-  photoButtonText: { color: colors.primary, fontSize: f(13), fontWeight: '600', marginTop: h(4) },
-  photoPreview: { flexDirection: 'row', gap: w(8), flexWrap: 'wrap', marginBottom: h(8) },
-  photoItem: { position: 'relative', width: w(72), height: w(72), borderRadius: w(8), overflow: 'hidden' },
+  photoButtonText: {
+    color: colors.primary,
+    fontSize: f(13),
+    fontWeight: '600',
+    marginTop: h(4),
+  },
+  photoPreview: {
+    flexDirection: 'row',
+    gap: w(8),
+    flexWrap: 'wrap',
+    marginBottom: h(8),
+  },
+  photoItem: {
+    position: 'relative',
+    width: w(72),
+    height: w(72),
+    borderRadius: w(8),
+    overflow: 'hidden',
+  },
   photoImage: { width: '100%', height: '100%' },
   photoRemove: {
     position: 'absolute',
@@ -600,7 +682,12 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   photoRemoveText: { color: colors.white, fontSize: f(14), fontWeight: '700' },
-  photoCount: { color: colors.textGray, fontSize: f(11), alignSelf: 'center', marginTop: h(4) },
+  photoCount: {
+    color: colors.textGray,
+    fontSize: f(11),
+    alignSelf: 'center',
+    marginTop: h(4),
+  },
   help: { color: '#999', fontSize: f(11), marginTop: h(4) },
   submit: {
     minHeight: h(50),

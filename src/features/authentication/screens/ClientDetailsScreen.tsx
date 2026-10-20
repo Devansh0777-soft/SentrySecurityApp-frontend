@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   ScrollView,
   StatusBar,
@@ -23,6 +22,7 @@ import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { digitsOnly, isValidPincode } from '../../../utils/validation';
 import { authService } from '../../../services/authService';
 import { registrationDraft } from '../../../services/registrationDraft';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ClientDetails'>;
 
@@ -49,33 +49,49 @@ const ClientDetailsScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleContinue = async () => {
     if (companyName.trim().length < 2) {
-      Alert.alert(
+      appAlert.alert(
         'Company name required',
         'Enter your company or organization name.',
+        { type: 'error' },
       );
       return;
     }
     if (siteName.trim().length < 2) {
-      Alert.alert(t('details.siteNameRequired'), t('details.enterProperty'));
+      appAlert.alert(
+        t('details.siteNameRequired'),
+        t('details.enterProperty'),
+        { type: 'error' },
+      );
       return;
     }
     if (siteAddress.trim().length < 5) {
-      Alert.alert(t('details.siteAddressRequired'), t('details.enterAddress'));
+      appAlert.alert(
+        t('details.siteAddressRequired'),
+        t('details.enterAddress'),
+        { type: 'error' },
+      );
       return;
     }
     if (city.trim().length < 2) {
-      Alert.alert(t('details.cityRequired'), t('details.enterYourCity'));
+      appAlert.alert(t('details.cityRequired'), t('details.enterYourCity'), {
+        type: 'error',
+      });
       return;
     }
     if (!state) {
-      Alert.alert(
+      appAlert.alert(
         t('details.stateRequired'),
         t('details.selectStateTerritory'),
+        { type: 'error' },
       );
       return;
     }
     if (!isValidPincode(pincode)) {
-      Alert.alert(t('details.invalidPincode'), t('details.enterValidPincode'));
+      appAlert.alert(
+        t('details.invalidPincode'),
+        t('details.enterValidPincode'),
+        { type: 'error' },
+      );
       return;
     }
     try {
@@ -96,9 +112,10 @@ const ClientDetailsScreen: React.FC<Props> = ({ navigation }) => {
       await authService.sendMobileOtp(mobile);
       navigation.navigate('VerifyMobile');
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         'Could not continue',
         error instanceof Error ? error.message : 'Please try again.',
+        { type: 'error' },
       );
     } finally {
       setIsSubmitting(false);

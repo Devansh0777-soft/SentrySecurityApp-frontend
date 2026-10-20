@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -31,6 +30,7 @@ import {
   type GuardProfile,
   type GuardProfileUpdate,
 } from '../../../services/guardService';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<GuardStackParamList, 'GuardPersonalInfo'>;
 
@@ -123,7 +123,9 @@ const GuardPersonalInfoScreen: React.FC<Props> = ({ navigation }) => {
   const save = async () => {
     const validationError = validate();
     if (validationError) {
-      Alert.alert(t('guardProfile.editProfile'), validationError);
+      appAlert.alert(t('guardProfile.editProfile'), validationError, {
+        type: 'error',
+      });
       return;
     }
     const payload: GuardProfileUpdate = {
@@ -145,16 +147,18 @@ const GuardPersonalInfoScreen: React.FC<Props> = ({ navigation }) => {
         gender: (updated.gender as FormState['gender']) || '',
       });
       setEditing(false);
-      Alert.alert(
+      appAlert.alert(
         t('guardProfile.profileUpdated'),
         t('guardProfile.profileUpdatedHint'),
+        { type: 'success' },
       );
     } catch (saveError) {
-      Alert.alert(
+      appAlert.alert(
         t('guardProfile.updateFailed'),
         saveError instanceof Error
           ? saveError.message
           : t('guardProfile.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);

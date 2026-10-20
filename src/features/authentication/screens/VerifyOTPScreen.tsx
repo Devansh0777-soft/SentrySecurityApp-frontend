@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -24,6 +23,7 @@ import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { isCompleteOtp } from '../../../utils/validation';
 import { authService } from '../../../services/authService';
 import { session } from '../../../services/session';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'VerifyOTP'>;
 
@@ -84,7 +84,9 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleVerifyOtp = async () => {
     if (!isCompleteOtp(otp)) {
-      Alert.alert(t('auth.invalidOtp'), t('auth.completeOtp'));
+      appAlert.alert(t('auth.invalidOtp'), t('auth.completeOtp'), {
+        type: 'error',
+      });
       return;
     }
     try {
@@ -95,9 +97,10 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation }) => {
       await authService.verifyForgotPasswordOtp(identifier, otp.join(''));
       navigation.navigate('CreateNewPassword');
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('auth.verificationFailed'),
         error instanceof Error ? error.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setIsSubmitting(false);
@@ -112,74 +115,74 @@ const VerifyOTPScreen: React.FC<Props> = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
       >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel={t('auth.goBack')}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
-        </TouchableOpacity>
-        <LanguageSelector />
-      </View>
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              accessibilityLabel={t('auth.goBack')}
+            >
+              <Feather name="arrow-left" size={scaleFont(26)} color="#000000" />
+            </TouchableOpacity>
+            <LanguageSelector />
+          </View>
 
-      <Image
-        source={require('../../../assets/images/login-shield-logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-
-      <Text style={styles.heading}>{t('auth.verifyOtp')}</Text>
-      <Text style={styles.subtitle}>{t('auth.enterCodeSent')}</Text>
-      <Text style={styles.phoneNumber}>
-        {identifier || t('auth.identifierFallback')}
-      </Text>
-
-      <View style={styles.otpRow}>
-        {otp.map((digit, index) => (
-          <TextInput
-            key={index}
-            ref={input => {
-              inputs.current[index] = input;
-            }}
-            value={digit}
-            onChangeText={value => updateOtp(value, index)}
-            onKeyPress={({ nativeEvent }) =>
-              handleKeyPress(nativeEvent.key, index)
-            }
-            style={styles.otpInput}
-            keyboardType="number-pad"
-            maxLength={6}
-            textAlign="center"
-            selectTextOnFocus
-            accessibilityLabel={t('auth.otpDigit', { number: index + 1 })}
+          <Image
+            source={require('../../../assets/images/login-shield-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
-        ))}
-      </View>
 
-      <Text style={styles.didNotReceive}>{t('auth.didNotReceive')}</Text>
-      <View style={styles.resendRow}>
-        <TouchableOpacity>
-          <Text style={styles.resendLink}>{t('auth.resendOtp')}</Text>
-        </TouchableOpacity>
-        <Text style={styles.resendTimer}> {t('auth.resendIn')}</Text>
-      </View>
+          <Text style={styles.heading}>{t('auth.verifyOtp')}</Text>
+          <Text style={styles.subtitle}>{t('auth.enterCodeSent')}</Text>
+          <Text style={styles.phoneNumber}>
+            {identifier || t('auth.identifierFallback')}
+          </Text>
 
-      <TouchableOpacity
-        style={[styles.verifyButton, isSubmitting && { opacity: 0.65 }]}
-        onPress={handleVerifyOtp}
-        disabled={isSubmitting}
-      >
-        <Text style={styles.verifyButtonText}>
-          {isSubmitting ? t('auth.verifying') : t('auth.verifyContinue')}
-        </Text>
-      </TouchableOpacity>
-      </ScrollView>
+          <View style={styles.otpRow}>
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={input => {
+                  inputs.current[index] = input;
+                }}
+                value={digit}
+                onChangeText={value => updateOtp(value, index)}
+                onKeyPress={({ nativeEvent }) =>
+                  handleKeyPress(nativeEvent.key, index)
+                }
+                style={styles.otpInput}
+                keyboardType="number-pad"
+                maxLength={6}
+                textAlign="center"
+                selectTextOnFocus
+                accessibilityLabel={t('auth.otpDigit', { number: index + 1 })}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.didNotReceive}>{t('auth.didNotReceive')}</Text>
+          <View style={styles.resendRow}>
+            <TouchableOpacity>
+              <Text style={styles.resendLink}>{t('auth.resendOtp')}</Text>
+            </TouchableOpacity>
+            <Text style={styles.resendTimer}> {t('auth.resendIn')}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.verifyButton, isSubmitting && { opacity: 0.65 }]}
+            onPress={handleVerifyOtp}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.verifyButtonText}>
+              {isSubmitting ? t('auth.verifying') : t('auth.verifyContinue')}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

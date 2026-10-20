@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -32,6 +31,7 @@ import {
   digitsOnly,
 } from '../../../utils/validation';
 import { authService } from '../../../services/authService';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreateAccount'>;
 type AccountType = 'agency' | 'client';
@@ -66,24 +66,30 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleContinue = async () => {
     if (name.trim().length < 2) {
-      Alert.alert(t('auth.invalidName'), t('auth.enterFullName'));
+      appAlert.alert(t('auth.invalidName'), t('auth.enterFullName'), {
+        type: 'error',
+      });
       return;
     }
     if (!isValidIndianMobile(mobile)) {
-      Alert.alert(t('auth.invalidMobile'), t('auth.enterValidMobile'));
+      appAlert.alert(t('auth.invalidMobile'), t('auth.enterValidMobile'), {
+        type: 'error',
+      });
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert(t('auth.invalidEmail'), t('auth.enterValidEmail'));
+      appAlert.alert(t('auth.invalidEmail'), t('auth.enterValidEmail'), {
+        type: 'error',
+      });
       return;
     }
     const error = passwordError(password);
     if (error) {
-      Alert.alert(t('auth.invalidPassword'), error);
+      appAlert.alert(t('auth.invalidPassword'), error, { type: 'error' });
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert(t('auth.passwordsMismatch'), t('auth.confirmMustMatch'));
+      appAlert.error(t('auth.passwordsMismatch'), t('auth.confirmMustMatch'));
       return;
     }
     try {
@@ -102,9 +108,10 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
         accountType === 'agency' ? 'AgencyDetails' : 'ClientDetails',
       );
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('auth.accountFailed'),
         error instanceof Error ? error.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setIsSubmitting(false);
@@ -121,146 +128,144 @@ const CreateAccountScreen: React.FC<Props> = ({ navigation, route }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
       >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled
-      >
-        <View style={styles.topBar}>
-          {forceAccountType ? (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={cancel}
-              accessibilityLabel={t('auth.backToSuperAdmin')}
-            >
-              <Feather
-                name="arrow-left"
-                size={scaleFont(26)}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.backButtonPlaceholder} />
-          )}
-          <LanguageSelector />
-        </View>
-
-        <Image
-          source={require('../../../assets/images/login-shield-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-
-        <Text style={styles.heading}>{t('auth.createAccount')}</Text>
-        <Text style={styles.subtitle}>{t('auth.createSubtitle')}</Text>
-
-        {!forceAccountType ? (
-          <View style={styles.authTabs}>
-            <TouchableOpacity style={styles.inactiveTab} onPress={cancel}>
-              <Text style={styles.inactiveTabText}>{t('auth.login')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.activeTab}>
-              <Text style={styles.activeTabText}>
-                {t('auth.createAccount')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        <Text style={styles.fieldLabel}>{t('auth.fullName')}</Text>
-        <FormInput
-          icon="user"
-          value={name}
-          onChangeText={setName}
-          placeholder={t('auth.exampleName')}
-        />
-
-        <Text style={styles.fieldLabel}>{t('auth.mobileNumber')}</Text>
-        <FormInput
-          icon="phone"
-          value={mobile}
-          onChangeText={value => setMobile(digitsOnly(value).slice(0, 10))}
-          placeholder="+91 9800 000 000"
-          keyboardType="phone-pad"
-        />
-
-        <Text style={styles.fieldLabel}>{t('auth.emailAddress')}</Text>
-        <FormInput
-          icon="mail"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="abc@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <Text style={styles.fieldLabel}>{t('auth.password')}</Text>
-        <PasswordInput
-          value={password}
-          onChangeText={setPassword}
-          visible={passwordVisible}
-          onToggleVisibility={() => setPasswordVisible(current => !current)}
-          placeholder={t('auth.enterPassword')}
-        />
-
-        <Text style={styles.fieldLabel}>
-          {t('auth.confirmPassword')}
-        </Text>
-        <PasswordInput
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          visible={confirmPasswordVisible}
-          onToggleVisibility={() =>
-            setConfirmPasswordVisible(current => !current)
-          }
-          placeholder={t('auth.enterPassword')}
-        />
-
-        <Text style={styles.accountTypeLabel}>
-          {forceAccountType
-            ? t('auth.accountType')
-            : t('auth.chooseAccountType')}
-        </Text>
-        <View style={styles.accountTypeRow}>
-          <AccountTypeCard
-            active={accountType === 'agency'}
-            icon="grid"
-            title={t('auth.agency')}
-            description={t('auth.agencyDescription')}
-            onPress={() => setAccountType('agency')}
-            fullWidth={forceAccountType === 'agency'}
-          />
-          {!forceAccountType ? (
-            <AccountTypeCard
-              active={accountType === 'client'}
-              icon="user"
-              title={t('auth.client')}
-              description={t('auth.clientDescription')}
-              onPress={() => setAccountType('client')}
-            />
-          ) : null}
-        </View>
-
-        <TouchableOpacity
-          style={[styles.continueButton, isSubmitting && { opacity: 0.65 }]}
-          onPress={handleContinue}
-          disabled={isSubmitting}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
         >
-          <Text style={styles.continueText}>
-            {isSubmitting ? t('auth.creatingAccount') : t('common.continue')}
-          </Text>
-        </TouchableOpacity>
-
-        {!forceAccountType ? (
-          <View style={styles.loginRow}>
-            <Text style={styles.loginPrompt}>{t('auth.alreadyAccount')}</Text>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.loginLink}> {t('auth.login')}</Text>
-            </TouchableOpacity>
+          <View style={styles.topBar}>
+            {forceAccountType ? (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={cancel}
+                accessibilityLabel={t('auth.backToSuperAdmin')}
+              >
+                <Feather
+                  name="arrow-left"
+                  size={scaleFont(26)}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.backButtonPlaceholder} />
+            )}
+            <LanguageSelector />
           </View>
-        ) : null}
-      </ScrollView>
+
+          <Image
+            source={require('../../../assets/images/login-shield-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+
+          <Text style={styles.heading}>{t('auth.createAccount')}</Text>
+          <Text style={styles.subtitle}>{t('auth.createSubtitle')}</Text>
+
+          {!forceAccountType ? (
+            <View style={styles.authTabs}>
+              <TouchableOpacity style={styles.inactiveTab} onPress={cancel}>
+                <Text style={styles.inactiveTabText}>{t('auth.login')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.activeTab}>
+                <Text style={styles.activeTabText}>
+                  {t('auth.createAccount')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          <Text style={styles.fieldLabel}>{t('auth.fullName')}</Text>
+          <FormInput
+            icon="user"
+            value={name}
+            onChangeText={setName}
+            placeholder={t('auth.exampleName')}
+          />
+
+          <Text style={styles.fieldLabel}>{t('auth.mobileNumber')}</Text>
+          <FormInput
+            icon="phone"
+            value={mobile}
+            onChangeText={value => setMobile(digitsOnly(value).slice(0, 10))}
+            placeholder="+91 9800 000 000"
+            keyboardType="phone-pad"
+          />
+
+          <Text style={styles.fieldLabel}>{t('auth.emailAddress')}</Text>
+          <FormInput
+            icon="mail"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="abc@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <Text style={styles.fieldLabel}>{t('auth.password')}</Text>
+          <PasswordInput
+            value={password}
+            onChangeText={setPassword}
+            visible={passwordVisible}
+            onToggleVisibility={() => setPasswordVisible(current => !current)}
+            placeholder={t('auth.enterPassword')}
+          />
+
+          <Text style={styles.fieldLabel}>{t('auth.confirmPassword')}</Text>
+          <PasswordInput
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            visible={confirmPasswordVisible}
+            onToggleVisibility={() =>
+              setConfirmPasswordVisible(current => !current)
+            }
+            placeholder={t('auth.enterPassword')}
+          />
+
+          <Text style={styles.accountTypeLabel}>
+            {forceAccountType
+              ? t('auth.accountType')
+              : t('auth.chooseAccountType')}
+          </Text>
+          <View style={styles.accountTypeRow}>
+            <AccountTypeCard
+              active={accountType === 'agency'}
+              icon="grid"
+              title={t('auth.agency')}
+              description={t('auth.agencyDescription')}
+              onPress={() => setAccountType('agency')}
+              fullWidth={forceAccountType === 'agency'}
+            />
+            {!forceAccountType ? (
+              <AccountTypeCard
+                active={accountType === 'client'}
+                icon="user"
+                title={t('auth.client')}
+                description={t('auth.clientDescription')}
+                onPress={() => setAccountType('client')}
+              />
+            ) : null}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.continueButton, isSubmitting && { opacity: 0.65 }]}
+            onPress={handleContinue}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.continueText}>
+              {isSubmitting ? t('auth.creatingAccount') : t('common.continue')}
+            </Text>
+          </TouchableOpacity>
+
+          {!forceAccountType ? (
+            <View style={styles.loginRow}>
+              <Text style={styles.loginPrompt}>{t('auth.alreadyAccount')}</Text>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={styles.loginLink}> {t('auth.login')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

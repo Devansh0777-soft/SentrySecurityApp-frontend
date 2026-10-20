@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   ActivityIndicator,
   StyleSheet,
   Text,
@@ -20,6 +19,7 @@ import { scaleFont } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
 import { isValidEmail, isValidIndianMobile } from '../../../utils/validation';
+import { appAlert } from '../../../services/alertService';
 
 type Form = Pick<SuperAdminProfile, 'full_name' | 'email' | 'mobile_number'>;
 
@@ -47,9 +47,10 @@ export default function SuperAdminProfilePanel({
         mobile_number: account.mobile_number ?? '',
       });
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('superAdmin.profile'),
         error instanceof Error ? error.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setLoading(false);
@@ -65,18 +66,23 @@ export default function SuperAdminProfilePanel({
 
   const save = async () => {
     if (form.full_name.trim().length < 2) {
-      Alert.alert(
+      appAlert.alert(
         t('superAdmin.fullNameRequired'),
         t('superAdmin.enterFullName'),
+        { type: 'error' },
       );
       return;
     }
     if (!isValidEmail(form.email)) {
-      Alert.alert(t('superAdmin.invalidEmail'), t('superAdmin.enterEmail'));
+      appAlert.alert(t('superAdmin.invalidEmail'), t('superAdmin.enterEmail'), {
+        type: 'error',
+      });
       return;
     }
     if (!isValidIndianMobile(form.mobile_number)) {
-      Alert.alert(t('superAdmin.invalidPhone'), t('superAdmin.enterPhone'));
+      appAlert.alert(t('superAdmin.invalidPhone'), t('superAdmin.enterPhone'), {
+        type: 'error',
+      });
       return;
     }
     try {
@@ -93,11 +99,16 @@ export default function SuperAdminProfilePanel({
         ...current,
         email: current.email.trim().toLowerCase(),
       }));
-      Alert.alert(t('superAdmin.profileUpdated'), t('superAdmin.changesSaved'));
+      appAlert.alert(
+        t('superAdmin.profileUpdated'),
+        t('superAdmin.changesSaved'),
+        { type: 'success' },
+      );
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('superAdmin.profile'),
         error instanceof Error ? error.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);

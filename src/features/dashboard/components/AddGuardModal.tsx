@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -25,6 +24,7 @@ import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
 import { scaleFont } from '../../../styles/dimensions';
+import { appAlert } from '../../../services/alertService';
 
 type Plan = 'day_shift' | 'night_watch' | '24x7';
 const emptyForm = {
@@ -171,9 +171,7 @@ export default function AddGuardModal({
       case 'age':
         if (
           value &&
-          (!/^\d+$/.test(value) ||
-            Number(value) < 18 ||
-            Number(value) > 65)
+          (!/^\d+$/.test(value) || Number(value) < 18 || Number(value) > 65)
         ) {
           return label('ageError');
         }
@@ -198,7 +196,8 @@ export default function AddGuardModal({
     let hasError = false;
     for (const key of requiredFields) {
       // gender is not in emptyForm, handle it separately
-      const value = key === 'gender' ? gender : form[key as keyof typeof emptyForm];
+      const value =
+        key === 'gender' ? gender : form[key as keyof typeof emptyForm];
       const err = validateField(key, value);
       if (err) {
         nextErrors[key] = err;
@@ -315,10 +314,11 @@ export default function AddGuardModal({
       else await agencyApiService.createGuard(payload);
       onCreated();
       onClose();
-      Alert.alert(
-        guard ? t('dashboard.editGuard') : label('title'),
-        guard ? t('dashboard.guardUpdated') : label('success'),
-      );
+      if (guard) {
+        appAlert.success(t('dashboard.editGuard'), t('dashboard.guardUpdated'));
+      } else {
+        appAlert.success(label('successTitle'), label('success'));
+      }
     } catch (err) {
       setError(assignmentErrorMessage(err, t));
     } finally {
@@ -441,9 +441,7 @@ export default function AddGuardModal({
   // with their x/y usage shown. Capacity comes from the linked coverage
   // request (guard_capacity); null means unlimited.
   const siteOptions: PickerOption[] = [
-    ...(guard?.site_id
-      ? [{ id: '', name: t('addGuardForm.unassigned') }]
-      : []),
+    ...(guard?.site_id ? [{ id: '', name: t('addGuardForm.unassigned') }] : []),
     ...sites.map(site => {
       const isCurrent = guard?.site_id === site.id;
       const assignedElsewhere = guard?.site_id != null && !isCurrent;
@@ -460,8 +458,8 @@ export default function AddGuardModal({
         note: assignedElsewhere
           ? t('addGuardForm.endAssignmentFirst')
           : full
-            ? `${usage} · ${t('addGuardForm.siteFull')}`
-            : usage,
+          ? `${usage} · ${t('addGuardForm.siteFull')}`
+          : usage,
         disabled: assignedElsewhere || full,
       };
     }),
@@ -700,7 +698,7 @@ export default function AddGuardModal({
                   style={s.remove}
                   disabled={saving}
                   onPress={() =>
-                    Alert.alert(
+                    appAlert.alert(
                       t('dashboard.removeGuard'),
                       t('dashboard.removeGuardConfirmation'),
                       [

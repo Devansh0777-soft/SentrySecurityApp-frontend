@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Linking,
@@ -42,6 +41,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { appAlert } from '../../../services/alertService';
 
 const severities: Array<{ key: GuardReport['severity']; labelKey: string }> = [
   { key: 'low', labelKey: 'guard.report.severityLow' },
@@ -149,7 +149,7 @@ const GuardReportScreen = () => {
 
   const submit = async () => {
     if (!notes.trim()) {
-      Alert.alert(
+      appAlert.error(
         t('guard.report.describeTitle'),
         t('guard.report.describeBody'),
       );
@@ -166,14 +166,15 @@ const GuardReportScreen = () => {
       setSeverity('low');
       setPhotos([]);
       setPhotoNotice(null);
-      Alert.alert(
+      appAlert.success(
         t('guard.report.submittedTitle'),
         t('guard.report.submittedBody'),
       );
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         t('guard.report.submitFailed'),
         error instanceof Error ? error.message : t('guard.common.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSubmitting(false);
@@ -293,7 +294,10 @@ const GuardReportScreen = () => {
             >
               {photos.map((photo, index) => (
                 <View key={`${photo.uri}-${index}`} style={styles.photoItem}>
-                  <Image source={{ uri: photo.uri }} style={styles.photoThumb} />
+                  <Image
+                    source={{ uri: photo.uri }}
+                    style={styles.photoThumb}
+                  />
                   <ScalePressable
                     style={styles.photoRemove}
                     onPress={() => removePhoto(index)}

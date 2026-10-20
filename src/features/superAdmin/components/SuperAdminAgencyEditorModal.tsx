@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -21,6 +20,7 @@ import {
   indiaLocationService,
   type IndiaLocationOption,
 } from '../../../services/indiaLocationService';
+import { appAlert } from '../../../services/alertService';
 
 export type DemoAgency = {
   id: string;
@@ -187,9 +187,10 @@ export default function SuperAdminAgencyEditorModal({
       !draft.district ||
       !draft.pincode.trim()
     ) {
-      Alert.alert(
+      appAlert.alert(
         'Missing details',
         'Complete the required Agency details before saving.',
+        { type: 'error' },
       );
       return;
     }
@@ -199,9 +200,10 @@ export default function SuperAdminAgencyEditorModal({
       !/^\+91[6-9]\d{9}$/.test(mobile) ||
       !/^[1-9]\d{5}$/.test(draft.pincode)
     ) {
-      Alert.alert(
+      appAlert.alert(
         'Invalid details',
         'Enter a valid email, Indian mobile number and pincode.',
+        { type: 'error' },
       );
       return;
     }
@@ -209,9 +211,10 @@ export default function SuperAdminAgencyEditorModal({
       (draft.gstNumber && !/^[A-Z0-9]{15}$/.test(draft.gstNumber)) ||
       (newPassword && newPassword.length < 8)
     ) {
-      Alert.alert(
+      appAlert.alert(
         'Invalid details',
         'GST must contain 15 letters or digits. A new password must contain at least 8 characters.',
+        { type: 'error' },
       );
       return;
     }
@@ -226,12 +229,17 @@ export default function SuperAdminAgencyEditorModal({
         },
         newPassword,
       );
-      Alert.alert(t('superAdmin.agencyUpdated'), t('superAdmin.agencySaved'));
+      appAlert.alert(
+        t('superAdmin.agencyUpdated'),
+        t('superAdmin.agencySaved'),
+        { type: 'success' },
+      );
       onClose();
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         'Could not save agency',
         error instanceof Error ? error.message : 'Please try again.',
+        { type: 'error' },
       );
     } finally {
       setSaving(false);
@@ -420,7 +428,7 @@ export default function SuperAdminAgencyEditorModal({
                         await onRemove(draft.id);
                         onClose();
                       } catch (error) {
-                        Alert.alert(
+                        appAlert.error(
                           'Could not remove agency',
                           error instanceof Error
                             ? error.message

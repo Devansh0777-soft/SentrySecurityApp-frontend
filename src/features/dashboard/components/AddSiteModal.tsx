@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,6 +22,7 @@ import {
 import { ApiError } from '../../../services/apiClient';
 import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
+import { appAlert } from '../../../services/alertService';
 
 type Props = {
   visible: boolean;
@@ -49,9 +49,10 @@ const AddSiteModal: React.FC<Props> = ({ visible, onClose, onCreated }) => {
   const [saving, setSaving] = useState(false);
   const save = async () => {
     if (!name.trim() || !address.trim()) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.missingDetails'),
         t('dashboard.siteAndAddressRequired'),
+        { type: 'error' },
       );
       return;
     }
@@ -68,9 +69,10 @@ const AddSiteModal: React.FC<Props> = ({ visible, onClose, onCreated }) => {
       onClose();
     } catch (error) {
       const limitReached = error instanceof ApiError && error.status === 403;
-      Alert.alert(
+      appAlert.alert(
         limitReached ? t('dashboard.planLimitTitle') : t('dashboard.saveSite'),
         error instanceof Error ? error.message : t('dashboard.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);
@@ -109,64 +111,73 @@ const AddSiteModal: React.FC<Props> = ({ visible, onClose, onCreated }) => {
               contentContainerStyle={s.scrollContent}
             >
               <Label text={t('dashboard.siteName')} required />
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder={t('dashboard.enterSiteName')}
-          />
-          <Label text={t('dashboard.address')} required />
-          <Input
-            value={address}
-            onChangeText={setAddress}
-            placeholder={t('dashboard.enterCompleteAddress')}
-          />
-          <Text style={s.hint}>{t('dashboard.startTyping')}</Text>
-          <Label text={t('dashboard.locationGps')} />
-          <View style={s.gps}>
-            <Text style={s.gpsText}>{t('dashboard.noGps')}</Text>
-            <TouchableOpacity
-              style={s.gpsButton}
-              onPress={() =>
-                Alert.alert(t('dashboard.locationGps'), t('dashboard.gpsSoon'))
-              }
-            >
-              <Feather name="map-pin" size={scaleFont(20)} color="#FFB800" />
-              <Text style={s.gpsButtonText}>
-                {t('dashboard.useCurrentLocation')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Label text={t('dashboard.coveragePlan')} />
-          <View style={s.planRow}>
-            {[
-              ['day_shift', 'dayShift'],
-              ['night_watch', 'nightWatch'],
-              ['24x7', 'coverage24x7'],
-            ].map(([key, labelKey]) => (
-              <TouchableOpacity
-                key={key}
-                style={[s.plan, plan === key && s.activePlan]}
-                onPress={() => setPlan(key)}
-              >
-                <Text style={[s.planText, plan === key && s.activePlanText]}>
-                  {t(`dashboard.${labelKey}`)}
+              <Input
+                value={name}
+                onChangeText={setName}
+                placeholder={t('dashboard.enterSiteName')}
+              />
+              <Label text={t('dashboard.address')} required />
+              <Input
+                value={address}
+                onChangeText={setAddress}
+                placeholder={t('dashboard.enterCompleteAddress')}
+              />
+              <Text style={s.hint}>{t('dashboard.startTyping')}</Text>
+              <Label text={t('dashboard.locationGps')} />
+              <View style={s.gps}>
+                <Text style={s.gpsText}>{t('dashboard.noGps')}</Text>
+                <TouchableOpacity
+                  style={s.gpsButton}
+                  onPress={() =>
+                    appAlert.alert(
+                      t('dashboard.locationGps'),
+                      t('dashboard.gpsSoon'),
+                    )
+                  }
+                >
+                  <Feather
+                    name="map-pin"
+                    size={scaleFont(20)}
+                    color="#FFB800"
+                  />
+                  <Text style={s.gpsButtonText}>
+                    {t('dashboard.useCurrentLocation')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Label text={t('dashboard.coveragePlan')} />
+              <View style={s.planRow}>
+                {[
+                  ['day_shift', 'dayShift'],
+                  ['night_watch', 'nightWatch'],
+                  ['24x7', 'coverage24x7'],
+                ].map(([key, labelKey]) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[s.plan, plan === key && s.activePlan]}
+                    onPress={() => setPlan(key)}
+                  >
+                    <Text
+                      style={[s.planText, plan === key && s.activePlanText]}
+                    >
+                      {t(`dashboard.${labelKey}`)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={s.timeLabels}>
+                <Text style={s.label}>{t('dashboard.startTime')}</Text>
+                <Text style={s.label}>{t('dashboard.endTime')}</Text>
+              </View>
+              <View style={s.timeRow}>
+                <Time value={startTime} onChange={setStartTime} />
+                <Time value={endTime} onChange={setEndTime} />
+              </View>
+              <TouchableOpacity style={s.save} onPress={save} disabled={saving}>
+                <Text style={s.saveText}>
+                  {saving ? t('dashboard.saving') : t('dashboard.saveSite')}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-          <View style={s.timeLabels}>
-            <Text style={s.label}>{t('dashboard.startTime')}</Text>
-            <Text style={s.label}>{t('dashboard.endTime')}</Text>
-          </View>
-          <View style={s.timeRow}>
-            <Time value={startTime} onChange={setStartTime} />
-            <Time value={endTime} onChange={setEndTime} />
-          </View>
-          <TouchableOpacity style={s.save} onPress={save} disabled={saving}>
-            <Text style={s.saveText}>
-              {saving ? t('dashboard.saving') : t('dashboard.saveSite')}
-            </Text>
-          </TouchableOpacity>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>

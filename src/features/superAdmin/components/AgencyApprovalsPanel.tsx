@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import ScalePressable from '../../../components/common/ScalePressable';
 import {
@@ -10,6 +10,7 @@ import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
 import { scaleFont } from '../../../styles/dimensions';
+import { appAlert } from '../../../services/alertService';
 
 export default function AgencyApprovalsPanel({
   onChanged,
@@ -36,7 +37,7 @@ export default function AgencyApprovalsPanel({
     void load();
   }, [load]);
   const review = (agency: PendingAgency, approve: boolean) => {
-    Alert.alert(
+    appAlert.alert(
       approve ? t('superAdmin.approve') : t('superAdmin.reject'),
       approve
         ? `${agency.agency_name} will be able to log in.`
@@ -56,7 +57,7 @@ export default function AgencyApprovalsPanel({
               );
               onChanged();
             } catch (err) {
-              Alert.alert(
+              appAlert.error(
                 t('superAdmin.agencyApprovals'),
                 err instanceof Error ? err.message : t('auth.tryAgain'),
               );
@@ -66,6 +67,7 @@ export default function AgencyApprovalsPanel({
           },
         },
       ],
+      { type: 'error' },
     );
   };
   return (

@@ -7,7 +7,6 @@ import {
   Text,
   View,
   Linking,
-  Alert,
   BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,14 +31,12 @@ import {
   type CoverageRequest,
 } from '../../../services/clientService';
 import { useAuth } from '../../authentication/context/AuthContext';
-import {
-  takeSlot,
-  awaitBootPrefetch,
-} from '../../../services/bootPrefetch';
+import { takeSlot, awaitBootPrefetch } from '../../../services/bootPrefetch';
 import { colors } from '../../../styles/colors';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
 import { scaleFont } from '../../../styles/dimensions';
+import { appAlert } from '../../../services/alertService';
 
 export default function ClientPortalScreen() {
   const { t } = useTranslation();
@@ -115,7 +112,9 @@ export default function ClientPortalScreen() {
         )}`,
       );
     } catch {
-      Alert.alert(t('client.needHelp'), t('clientInfo.emailUnavailable'));
+      appAlert.alert(t('client.needHelp'), t('clientInfo.emailUnavailable'), {
+        type: 'error',
+      });
     }
   };
   return (

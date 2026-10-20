@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -20,6 +19,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import ScalePressable from '../../../components/common/ScalePressable';
 import SiteCheckpointsSection from './SiteCheckpointsSection';
+import { appAlert } from '../../../services/alertService';
 
 type Props = {
   visible: boolean;
@@ -77,7 +77,9 @@ const EditSiteModal: React.FC<Props> = ({
       });
       onChanged?.(updated, 'updated');
       onClose();
-      Alert.alert(t('dashboard.saveChanges'), t('dashboard.siteUpdated'));
+      appAlert.alert(t('dashboard.saveChanges'), t('dashboard.siteUpdated'), {
+        type: 'success',
+      });
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -89,31 +91,38 @@ const EditSiteModal: React.FC<Props> = ({
     }
   };
   const confirmRemove = () =>
-    Alert.alert(t('dashboard.removeSite'), t('dashboard.removeSiteConfirm'), [
-      { text: t('superAdmin.cancel'), style: 'cancel' },
-      {
-        text: t('dashboard.removeSite'),
-        style: 'destructive',
-        onPress: async () => {
-          setSaving(true);
-          setError('');
-          try {
-            await agencyApiService.removeSite(site.id);
-            onChanged?.(site, 'deleted');
-            onClose();
-            Alert.alert(t('dashboard.removeSite'), t('dashboard.siteRemoved'));
-          } catch (removeError) {
-            setError(
-              removeError instanceof Error
-                ? removeError.message
-                : t('dashboard.siteRemoveFailed'),
-            );
-          } finally {
-            setSaving(false);
-          }
+    appAlert.alert(
+      t('dashboard.removeSite'),
+      t('dashboard.removeSiteConfirm'),
+      [
+        { text: t('superAdmin.cancel'), style: 'cancel' },
+        {
+          text: t('dashboard.removeSite'),
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            setError('');
+            try {
+              await agencyApiService.removeSite(site.id);
+              onChanged?.(site, 'deleted');
+              onClose();
+              appAlert.success(
+                t('dashboard.removeSite'),
+                t('dashboard.siteRemoved'),
+              );
+            } catch (removeError) {
+              setError(
+                removeError instanceof Error
+                  ? removeError.message
+                  : t('dashboard.siteRemoveFailed'),
+              );
+            } finally {
+              setSaving(false);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
 
   return (
     <Modal
@@ -170,7 +179,10 @@ const EditSiteModal: React.FC<Props> = ({
             <ScalePressable
               style={s.outlineButton}
               onPress={() =>
-                Alert.alert(t('dashboard.locationGps'), t('dashboard.gpsSoon'))
+                appAlert.alert(
+                  t('dashboard.locationGps'),
+                  t('dashboard.gpsSoon'),
+                )
               }
               accessibilityRole="button"
             >
@@ -209,7 +221,7 @@ const EditSiteModal: React.FC<Props> = ({
             <ScalePressable
               style={s.outlineButton}
               onPress={() =>
-                Alert.alert(
+                appAlert.alert(
                   t('dashboard.getDirections'),
                   t('dashboard.directionsUnavailable'),
                 )

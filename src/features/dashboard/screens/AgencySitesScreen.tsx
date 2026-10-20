@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -35,6 +34,7 @@ import EditSiteModal from '../components/EditSiteModal';
 import AgencyCoverageRequests from '../components/AgencyCoverageRequests';
 import PlanLimitNotice from '../components/PlanLimitNotice';
 import { usePlanUsage } from '../hooks/usePlanUsage';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencySites'>;
 const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
@@ -76,7 +76,7 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
   // and points the agency admin at the Plan screen to upgrade.
   const requestAddSite = useCallback(() => {
     if (sitesAtLimit) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.planLimitTitle'),
         t('dashboard.siteLimitMessage', {
           plan: planName || t('dashboard.plan'),
@@ -89,6 +89,7 @@ const AgencySitesScreen: React.FC<Props> = ({ navigation, route }) => {
             onPress: () => navigation.navigate('AgencyPlan'),
           },
         ],
+        { type: 'warning' },
       );
       return;
     }

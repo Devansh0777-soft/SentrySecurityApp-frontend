@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +24,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { appAlert } from '../../../services/alertService';
 
 type Props = {
   requestedId?: number;
@@ -99,7 +99,8 @@ export default function AgencyCoverageRequests({
     [sites, selected],
   );
   const guardsOnSite = useMemo(
-    () => (linkedSite ? guards.filter(guard => guard.site_id === linkedSite.id) : []),
+    () =>
+      linkedSite ? guards.filter(guard => guard.site_id === linkedSite.id) : [],
     [guards, linkedSite],
   );
   const capacity = selected?.guards_needed ?? 0;
@@ -108,7 +109,7 @@ export default function AgencyCoverageRequests({
 
   const updateStatus = async (status: AgencyCoverageRequest['status']) => {
     if (status === 'assigned' && !selectedGuardIds.length) {
-      Alert.alert(
+      appAlert.error(
         t('coverageManagement.assignGuards'),
         t('coverageManagement.selectGuardFirst'),
       );
@@ -134,18 +135,20 @@ export default function AgencyCoverageRequests({
       // Refresh guards/sites from the server so counts and availability
       // always reflect the committed assignment.
       load({ silent: true });
-      Alert.alert(
+      appAlert.alert(
         t('coverageManagement.requestUpdated'),
         t('coverageManagement.requestUpdatedHint'),
+        { type: 'success' },
       );
     } catch (updateError) {
       const limitReached =
         updateError instanceof ApiError && updateError.status === 403;
-      Alert.alert(
+      appAlert.alert(
         limitReached
           ? t('dashboard.planLimitTitle')
           : t('coverageManagement.unableToUpdate'),
         assignmentErrorMessage(updateError, t),
+        { type: 'error' },
       );
     } finally {
       setWorking(false);
@@ -285,9 +288,16 @@ export default function AgencyCoverageRequests({
                         {t('coverageManagement.checkpointsHint')}
                       </Text>
                       {(selected.checkpoints ?? []).map((point, index) => (
-                        <View key={point.id ?? `${point.name}-${index}`} style={styles.checkpointRow}>
-                          <Text style={styles.checkpointSeq}>{point.sequence_order ?? index + 1}</Text>
-                          <Text style={styles.checkpointName}>{point.name}</Text>
+                        <View
+                          key={point.id ?? `${point.name}-${index}`}
+                          style={styles.checkpointRow}
+                        >
+                          <Text style={styles.checkpointSeq}>
+                            {point.sequence_order ?? index + 1}
+                          </Text>
+                          <Text style={styles.checkpointName}>
+                            {point.name}
+                          </Text>
                         </View>
                       ))}
                     </View>
@@ -320,28 +330,30 @@ export default function AgencyCoverageRequests({
                           const elsewhere =
                             guard.site_id != null && !alreadyHere;
                           const limitReached =
-                            !active && selectedGuardIds.length >= remainingSlots;
+                            !active &&
+                            selectedGuardIds.length >= remainingSlots;
                           const unavailable =
                             elsewhere || alreadyHere || limitReached;
                           const subtitle = alreadyHere
                             ? t('coverageManagement.alreadyOnSite')
                             : elsewhere
-                              ? t('coverageManagement.assignedTo', {
-                                  site:
-                                    guard.site_name ||
-                                    t('addGuardForm.unassigned'),
-                                })
-                              : `${guard.guard_code} · ${
+                            ? t('coverageManagement.assignedTo', {
+                                site:
                                   guard.site_name ||
-                                  t('addGuardForm.unassigned')
-                                }`;
+                                  t('addGuardForm.unassigned'),
+                              })
+                            : `${guard.guard_code} · ${
+                                guard.site_name || t('addGuardForm.unassigned')
+                              }`;
                           return (
                             <ScalePressable
                               key={guard.id}
                               style={[
                                 styles.guardRow,
                                 active && styles.guardRowActive,
-                                unavailable && !active && styles.guardRowDisabled,
+                                unavailable &&
+                                  !active &&
+                                  styles.guardRowDisabled,
                               ]}
                               disabled={unavailable && !active}
                               onPress={() => {

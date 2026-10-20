@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -25,6 +24,7 @@ import {
   scaleWidth as w,
 } from '../../../styles/dimensions';
 import type { GuardStackParamList } from '../../../navigation/types';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<GuardStackParamList, 'GuardBankDetails'>;
 
@@ -51,15 +51,18 @@ const GuardBankDetailsScreen: React.FC<Props> = ({ navigation }) => {
   const save = async () => {
     const validationError = validate();
     if (validationError) {
-      Alert.alert(t('guardProfile.bankDetails'), validationError);
+      appAlert.alert(t('guardProfile.bankDetails'), validationError, {
+        type: 'error',
+      });
       return;
     }
     try {
       setSaving(true);
       await new Promise<void>(resolve => setTimeout(() => resolve(), 600));
-      Alert.alert(
+      appAlert.alert(
         t('guardProfile.bankSaved'),
         t('guardProfile.bankSavedHint'),
+        { type: 'success' },
       );
     } finally {
       setSaving(false);
@@ -94,9 +97,7 @@ const GuardBankDetailsScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View>
-            <Text style={s.fieldLabel}>
-              {t('guardProfile.accountNumber')}
-            </Text>
+            <Text style={s.fieldLabel}>{t('guardProfile.accountNumber')}</Text>
             <TextInput
               value={accountNumber}
               onChangeText={text =>
@@ -114,7 +115,10 @@ const GuardBankDetailsScreen: React.FC<Props> = ({ navigation }) => {
               value={ifscCode}
               onChangeText={text =>
                 setIfscCode(
-                  text.replace(/[^a-zA-Z0-9]/g, '').slice(0, 11).toUpperCase(),
+                  text
+                    .replace(/[^a-zA-Z0-9]/g, '')
+                    .slice(0, 11)
+                    .toUpperCase(),
                 )
               }
               style={s.fieldBox}
@@ -142,7 +146,9 @@ const GuardBankDetailsScreen: React.FC<Props> = ({ navigation }) => {
             accessibilityLabel={t('guardProfile.saveChanges')}
           >
             <Text style={s.saveText}>
-              {saving ? t('guardProfile.saving') : t('guardProfile.saveChanges')}
+              {saving
+                ? t('guardProfile.saving')
+                : t('guardProfile.saveChanges')}
             </Text>
           </ScalePressable>
         </ScrollView>

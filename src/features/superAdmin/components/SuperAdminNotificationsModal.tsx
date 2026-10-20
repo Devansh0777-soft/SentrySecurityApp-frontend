@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -22,6 +21,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { appAlert } from '../../../services/alertService';
 
 type Props = {
   visible: boolean;
@@ -96,9 +96,10 @@ export default function SuperAdminNotificationsModal({
       );
       onNotificationSelect?.(notification);
     } catch (markError) {
-      Alert.alert(
+      appAlert.alert(
         t('superAdmin.notifications'),
         markError instanceof Error ? markError.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setWorkingId(null);
@@ -115,9 +116,10 @@ export default function SuperAdminNotificationsModal({
       );
       onUnreadCountChange(0);
     } catch (markError) {
-      Alert.alert(
+      appAlert.alert(
         t('superAdmin.notifications'),
         markError instanceof Error ? markError.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setWorkingId(null);
@@ -125,7 +127,7 @@ export default function SuperAdminNotificationsModal({
   };
 
   const removeNotification = (notification: AppNotification) => {
-    Alert.alert(
+    appAlert.alert(
       t('superAdmin.deleteNotification'),
       t('superAdmin.deleteNotificationMessage'),
       [
@@ -149,7 +151,7 @@ export default function SuperAdminNotificationsModal({
                 );
               }
             } catch (removeError) {
-              Alert.alert(
+              appAlert.error(
                 t('superAdmin.deleteNotification'),
                 removeError instanceof Error
                   ? removeError.message

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Linking,
   ScrollView,
   StatusBar,
@@ -35,6 +34,7 @@ import ScalePressable from '../../../components/common/ScalePressable';
 import AddGuardModal from '../components/AddGuardModal';
 import PlanLimitNotice from '../components/PlanLimitNotice';
 import { usePlanUsage } from '../hooks/usePlanUsage';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyGuards'>;
 type Filter = 'all' | 'on_duty' | 'off_duty';
@@ -52,7 +52,7 @@ const AgencyGuardsScreen: React.FC<Props> = ({ navigation }) => {
   // and points the agency admin at the Plan screen to upgrade.
   const requestAddGuard = useCallback(() => {
     if (guardsAtLimit) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.planLimitTitle'),
         t('dashboard.guardLimitMessage', {
           plan: planName || t('dashboard.plan'),
@@ -65,6 +65,7 @@ const AgencyGuardsScreen: React.FC<Props> = ({ navigation }) => {
             onPress: () => navigation.navigate('AgencyPlan'),
           },
         ],
+        { type: 'warning' },
       );
       return;
     }

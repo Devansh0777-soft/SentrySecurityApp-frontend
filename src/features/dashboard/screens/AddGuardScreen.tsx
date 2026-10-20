@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
@@ -17,7 +16,10 @@ import {
   type LayoutChangeEvent,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Feather from 'react-native-vector-icons/Feather';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +35,7 @@ import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
 import { scaleFont } from '../../../styles/dimensions';
 import type { MainStackParamList } from '../../../navigation/types';
+import { appAlert } from '../../../services/alertService';
 
 type Plan = 'day_shift' | 'night_watch' | '24x7';
 const emptyForm = {
@@ -84,10 +87,7 @@ const SITE_MENU_GAP = 8;
 const SITE_PICKER_CHROME = spacing.xxxl * 2;
 
 type Props = {
-  navigation: NativeStackNavigationProp<
-    MainStackParamList,
-    'AddGuardScreen'
-  >;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'AddGuardScreen'>;
 };
 
 export default function AddGuardScreen({ navigation }: Props) {
@@ -178,7 +178,7 @@ export default function AddGuardScreen({ navigation }: Props) {
       };
       await agencyApiService.createGuard(payload);
       navigation.navigate('AgencyGuards');
-      Alert.alert(label('title'), label('success'));
+      appAlert.success(label('successTitle'), label('success'));
     } catch (err) {
       setError(assignmentErrorMessage(err, t));
     } finally {
@@ -191,15 +191,21 @@ export default function AddGuardScreen({ navigation }: Props) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [picker, setPicker] = useState<'site' | 'time' | null>(null);
   const [query, setQuery] = useState('');
-  const [endTime, setEndTime] = useState(`${String(
-    (Number(startTime.split(':')[0]) + hours) % 24,
-  ).padStart(2, '0')}:${startTime.split(':')[1]}`);
+  const [endTime, setEndTime] = useState(
+    `${String((Number(startTime.split(':')[0]) + hours) % 24).padStart(
+      2,
+      '0',
+    )}:${startTime.split(':')[1]}`,
+  );
 
   // Recalculate end time when start time or shift hours change
   useEffect(() => {
-    setEndTime(`${String(
-      (Number(startTime.split(':')[0]) + hours) % 24,
-    ).padStart(2, '0')}:${startTime.split(':')[1]}`);
+    setEndTime(
+      `${String((Number(startTime.split(':')[0]) + hours) % 24).padStart(
+        2,
+        '0',
+      )}:${startTime.split(':')[1]}`,
+    );
   }, [startTime, hours]);
 
   // ---- Field-level validation ----
@@ -259,9 +265,7 @@ export default function AddGuardScreen({ navigation }: Props) {
       case 'age':
         if (
           value &&
-          (!/^\d+$/.test(value) ||
-            Number(value) < 18 ||
-            Number(value) > 65)
+          (!/^\d+$/.test(value) || Number(value) < 18 || Number(value) > 65)
         ) {
           return label('ageError');
         }
@@ -285,7 +289,8 @@ export default function AddGuardScreen({ navigation }: Props) {
     ];
     let hasError = false;
     for (const key of requiredFields) {
-      const value = key === 'gender' ? gender : form[key as keyof typeof emptyForm];
+      const value =
+        key === 'gender' ? gender : form[key as keyof typeof emptyForm];
       const err = validateField(key, value);
       if (err) {
         nextErrors[key] = err;
@@ -400,7 +405,7 @@ export default function AddGuardScreen({ navigation }: Props) {
       };
       await agencyApiService.createGuard(payload);
       navigation.navigate('AgencyGuards');
-      Alert.alert(label('title'), label('success'));
+      appAlert.success(label('successTitle'), label('success'));
     } catch (err) {
       setError(assignmentErrorMessage(err, t));
     } finally {
@@ -437,14 +442,13 @@ export default function AddGuardScreen({ navigation }: Props) {
           onChangeText={value => {
             setForm(current => ({
               ...current,
-              [key]:
-                numeric
-                  ? value.replace(/\D/g, '')
-                  : key === 'joiningDate'
-                  ? value.replace(/[^0-9-]/g, '')
-                  : ['basicSalary', 'allowances'].includes(key)
-                  ? value.replace(/[^0-9.]/g, '')
-                  : value,
+              [key]: numeric
+                ? value.replace(/\D/g, '')
+                : key === 'joiningDate'
+                ? value.replace(/[^0-9-]/g, '')
+                : ['basicSalary', 'allowances'].includes(key)
+                ? value.replace(/[^0-9.]/g, '')
+                : value,
             }));
             // Clear error as user types
             if (fieldErrors[key]) clearFieldError(key);
@@ -542,7 +546,10 @@ export default function AddGuardScreen({ navigation }: Props) {
   // list so the form behind never moves.
   const siteDesiredCard = spacing.xxxl * 4 + SITE_PICKER_CHROME;
   const siteRoomBelow = siteAnchor
-    ? siteOverlayH - (siteAnchor.y + siteAnchor.height) - insets.bottom - SITE_MENU_GAP
+    ? siteOverlayH -
+      (siteAnchor.y + siteAnchor.height) -
+      insets.bottom -
+      SITE_MENU_GAP
     : 0;
   const siteRoomAbove = siteAnchor
     ? siteAnchor.y - insets.top - SITE_MENU_GAP
@@ -552,9 +559,7 @@ export default function AddGuardScreen({ navigation }: Props) {
     siteRoomBelow < siteDesiredCard &&
     siteRoomAbove > siteRoomBelow;
   const siteRoom = sitePickerOpensUp ? siteRoomAbove : siteRoomBelow;
-  const siteCardMax = siteAnchor
-    ? Math.max(siteRoom, 0)
-    : spacing.xxxl * 5;
+  const siteCardMax = siteAnchor ? Math.max(siteRoom, 0) : spacing.xxxl * 5;
   const siteListMax = siteAnchor
     ? Math.max(
         Math.min(spacing.xxxl * 4, siteRoom - SITE_PICKER_CHROME),
@@ -631,8 +636,7 @@ export default function AddGuardScreen({ navigation }: Props) {
                   ...current,
                   mobileNumber: value.replace(/\D/g, ''),
                 }));
-                if (fieldErrors.mobileNumber)
-                  clearFieldError('mobileNumber');
+                if (fieldErrors.mobileNumber) clearFieldError('mobileNumber');
               }}
               maxLength={10}
               keyboardType="number-pad"
@@ -775,7 +779,9 @@ export default function AddGuardScreen({ navigation }: Props) {
           </View>
           <Text style={s.label}>{label('gender')} *</Text>
           {choices(['male', 'female', 'other'], gender, setGender, label)}
-          {fieldErrors.gender && <Text style={s.error}>{fieldErrors.gender}</Text>}
+          {fieldErrors.gender && (
+            <Text style={s.error}>{fieldErrors.gender}</Text>
+          )}
           <Text style={s.label}>{label('site')}</Text>
           <View ref={siteAnchorRef}>
             <ScalePressable
@@ -909,8 +915,7 @@ export default function AddGuardScreen({ navigation }: Props) {
                   ...current,
                   basicSalary: value.replace(/[^0-9.]/g, ''),
                 }));
-                if (fieldErrors.basicSalary)
-                  clearFieldError('basicSalary');
+                if (fieldErrors.basicSalary) clearFieldError('basicSalary');
               }}
               keyboardType="decimal-pad"
               maxLength={255}
@@ -931,8 +936,7 @@ export default function AddGuardScreen({ navigation }: Props) {
                   ...current,
                   allowances: value.replace(/[^0-9.]/g, ''),
                 }));
-                if (fieldErrors.allowances)
-                  clearFieldError('allowances');
+                if (fieldErrors.allowances) clearFieldError('allowances');
               }}
               keyboardType="decimal-pad"
               maxLength={255}
@@ -947,10 +951,7 @@ export default function AddGuardScreen({ navigation }: Props) {
             </Text>
           ) : null}
           <ScalePressable
-            style={[
-              s.submit,
-              saving && { opacity: 0.7 },
-            ]}
+            style={[s.submit, saving && { opacity: 0.7 }]}
             disabled={saving}
             onPress={save}
             accessibilityRole="button"
@@ -970,13 +971,19 @@ export default function AddGuardScreen({ navigation }: Props) {
           <View style={s.modalOverlay}>
             <View style={s.modalSheet}>
               <View style={s.modalHeader}>
-                <Text style={s.modalHeaderText}>{t('dashboard.selectJoiningDate')}</Text>
+                <Text style={s.modalHeaderText}>
+                  {t('dashboard.selectJoiningDate')}
+                </Text>
                 <Pressable
                   style={s.modalClose}
                   onPress={() => setCalendarOpen(false)}
                   accessibilityLabel={t('dashboard.back')}
                 >
-                  <Feather name="chevron-left" size={scaleFont(20)} color={colors.primary} />
+                  <Feather
+                    name="chevron-left"
+                    size={scaleFont(20)}
+                    color={colors.primary}
+                  />
                 </Pressable>
               </View>
               <View style={s.pickerBody}>
@@ -999,8 +1006,7 @@ export default function AddGuardScreen({ navigation }: Props) {
                         <Text
                           style={[
                             s.dateOptionText,
-                            dateParts.year === year &&
-                              s.dateOptionTextSelected,
+                            dateParts.year === year && s.dateOptionTextSelected,
                           ]}
                         >
                           {year}
@@ -1082,14 +1088,22 @@ export default function AddGuardScreen({ navigation }: Props) {
                 <ScalePressable
                   style={s.modalActionSave}
                   onPress={() => {
-                    const dateString = `${String(dateParts.year).padStart(4, '0')}-${String(
-                      dateParts.month,
-                    ).padStart(2, '0')}-${String(dateParts.day).padStart(2, '0')}`;
-                    setForm(current => ({ ...current, joiningDate: dateString }));
+                    const dateString = `${String(dateParts.year).padStart(
+                      4,
+                      '0',
+                    )}-${String(dateParts.month).padStart(2, '0')}-${String(
+                      dateParts.day,
+                    ).padStart(2, '0')}`;
+                    setForm(current => ({
+                      ...current,
+                      joiningDate: dateString,
+                    }));
                     setCalendarOpen(false);
                   }}
                 >
-                  <Text style={s.modalActionSaveText}>{t('dashboard.done')}</Text>
+                  <Text style={s.modalActionSaveText}>
+                    {t('dashboard.done')}
+                  </Text>
                 </ScalePressable>
               </View>
             </View>

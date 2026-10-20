@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 
 import ScalePressable from '../../../components/common/ScalePressable';
 import {
@@ -17,6 +10,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { appAlert } from '../../../services/alertService';
 
 type Status = 'pending' | 'in_progress' | 'resolved';
 const options: Array<{ value: Status; label: string }> = [
@@ -51,9 +45,10 @@ export default function IncidentStatusModal({
       );
       onClose();
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         'Unable to update incident',
         error instanceof Error ? error.message : 'Please try again.',
+        { type: 'error' },
       );
     } finally {
       setSaving(false);

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -28,12 +27,10 @@ import { scaleFont } from '../../../styles/dimensions';
 import { typography } from '../../../styles/typography';
 import ScalePressable from '../../../components/common/ScalePressable';
 import type { MainStackParamList } from '../../../navigation/types';
+import { appAlert } from '../../../services/alertService';
 
 type Props = {
-  navigation: NativeStackNavigationProp<
-    MainStackParamList,
-    'AddSiteScreen'
-  >;
+  navigation: NativeStackNavigationProp<MainStackParamList, 'AddSiteScreen'>;
 };
 
 const AddSiteScreen: React.FC<Props> = ({ navigation }) => {
@@ -44,9 +41,10 @@ const AddSiteScreen: React.FC<Props> = ({ navigation }) => {
   const [saving, setSaving] = useState(false);
   const save = async () => {
     if (!name.trim() || !address.trim()) {
-      Alert.alert(
+      appAlert.alert(
         t('dashboard.missingDetails'),
         t('dashboard.siteAndAddressRequired'),
+        { type: 'error' },
       );
       return;
     }
@@ -58,12 +56,15 @@ const AddSiteScreen: React.FC<Props> = ({ navigation }) => {
         coveragePlan: plan,
       })) as { data: AgencySite };
       navigation.navigate('AgencySites');
-      Alert.alert(t('dashboard.saveSite'), t('dashboard.siteCreated'));
+      appAlert.alert(t('dashboard.saveSite'), t('dashboard.siteCreated'), {
+        type: 'success',
+      });
     } catch (error) {
       const limitReached = error instanceof ApiError && error.status === 403;
-      Alert.alert(
+      appAlert.alert(
         limitReached ? t('dashboard.planLimitTitle') : t('dashboard.saveSite'),
         error instanceof Error ? error.message : t('dashboard.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);
@@ -102,77 +103,76 @@ const AddSiteScreen: React.FC<Props> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={s.form}>
-          <View style={s.field}>
-            <Text style={s.label}>{t('dashboard.siteName')} *</Text>
-            <TextInput
-              style={s.input}
-              value={name}
-              onChangeText={setName}
-              placeholder={t('dashboard.enterSiteName')}
-              placeholderTextColor="#999"
-              maxLength={100}
-              autoCorrect={false}
-            />
-          </View>
-          <View style={s.field}>
-            <Text style={s.label}>{t('dashboard.address')} *</Text>
-            <TextInput
-              style={s.input}
-              value={address}
-              onChangeText={setAddress}
-              placeholder={t('dashboard.enterCompleteAddress')}
-              placeholderTextColor="#999"
-              maxLength={200}
-              autoCorrect={false}
-            />
-          </View>
-          <View style={s.field}>
-            <TouchableOpacity
-              style={s.gps}
-              onPress={() => {
-                // GPS capture handled by backend integration
-              }}
-            >
-              <Text style={s.gpsText}>{t('dashboard.useCurrentLocation')}</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={s.label}>{t('dashboard.coveragePlan')} *</Text>
-          <View style={s.planRow}>
-            {['day_shift', 'night_watch', '24x7'].map(p => (
-              <ScalePressable
-                key={p}
-                style={[
-                  s.plan,
-                  plan === p && s.activePlan,
-                ]}
-                disabled={saving}
-                onPress={() => setPlan(p)}
+            <View style={s.field}>
+              <Text style={s.label}>{t('dashboard.siteName')} *</Text>
+              <TextInput
+                style={s.input}
+                value={name}
+                onChangeText={setName}
+                placeholder={t('dashboard.enterSiteName')}
+                placeholderTextColor="#999"
+                maxLength={100}
+                autoCorrect={false}
+              />
+            </View>
+            <View style={s.field}>
+              <Text style={s.label}>{t('dashboard.address')} *</Text>
+              <TextInput
+                style={s.input}
+                value={address}
+                onChangeText={setAddress}
+                placeholder={t('dashboard.enterCompleteAddress')}
+                placeholderTextColor="#999"
+                maxLength={200}
+                autoCorrect={false}
+              />
+            </View>
+            <View style={s.field}>
+              <TouchableOpacity
+                style={s.gps}
+                onPress={() => {
+                  // GPS capture handled by backend integration
+                }}
               >
-                <Text style={[s.planText, plan === p && s.activePlanText]} numberOfLines={2}>
-                  {p === 'day_shift'
-                    ? t('dashboard.dayShift')
-                    : p === 'night_watch'
-                    ? t('dashboard.nightWatch')
-                    : t('dashboard.coverage24x7')}
+                <Text style={s.gpsText}>
+                  {t('dashboard.useCurrentLocation')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={s.label}>{t('dashboard.coveragePlan')} *</Text>
+            <View style={s.planRow}>
+              {['day_shift', 'night_watch', '24x7'].map(p => (
+                <ScalePressable
+                  key={p}
+                  style={[s.plan, plan === p && s.activePlan]}
+                  disabled={saving}
+                  onPress={() => setPlan(p)}
+                >
+                  <Text
+                    style={[s.planText, plan === p && s.activePlanText]}
+                    numberOfLines={2}
+                  >
+                    {p === 'day_shift'
+                      ? t('dashboard.dayShift')
+                      : p === 'night_watch'
+                      ? t('dashboard.nightWatch')
+                      : t('dashboard.coverage24x7')}
+                  </Text>
+                </ScalePressable>
+              ))}
+            </View>
+            <View style={s.submitWrapper}>
+              <ScalePressable
+                style={[s.save, saving && { opacity: 0.7 }]}
+                disabled={saving}
+                onPress={save}
+                accessibilityRole="button"
+              >
+                <Text style={s.saveText}>
+                  {saving ? t('dashboard.saving') : t('dashboard.saveSite')}
                 </Text>
               </ScalePressable>
-            ))}
-          </View>
-          <View style={s.submitWrapper}>
-            <ScalePressable
-              style={[
-                s.save,
-                saving && { opacity: 0.7 },
-              ]}
-              disabled={saving}
-              onPress={save}
-              accessibilityRole="button"
-            >
-              <Text style={s.saveText}>
-                {saving ? t('dashboard.saving') : t('dashboard.saveSite')}
-              </Text>
-            </ScalePressable>
-          </View>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -247,7 +247,11 @@ const s = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
   },
-  gpsText: { fontSize: scaleFont(typography.sizes.md), color: colors.primary, textAlign: 'center' },
+  gpsText: {
+    fontSize: scaleFont(typography.sizes.md),
+    color: colors.primary,
+    textAlign: 'center',
+  },
   planRow: { flexDirection: 'row', gap: spacing.sm },
   plan: {
     minHeight: spacing.xxxl,
@@ -278,7 +282,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveText: { fontSize: scaleFont(typography.sizes.lg), color: colors.white, fontWeight: typography.weights.bold },
+  saveText: {
+    fontSize: scaleFont(typography.sizes.lg),
+    color: colors.white,
+    fontWeight: typography.weights.bold,
+  },
 });
 
 export default AddSiteScreen;

@@ -126,7 +126,8 @@ const en = {
       requestUpdatedHint: 'The client request status has been saved.',
       unableToUpdate: 'Unable to update request',
       checkpointsTitle: 'Requested patrol checkpoints',
-      checkpointsHint: 'Added by the client. They are copied to the site on approval.',
+      checkpointsHint:
+        'Added by the client. They are copied to the site on approval.',
       statuses: {
         pending: 'Pending',
         approved: 'Approved',
@@ -192,7 +193,8 @@ const en = {
       ageError: 'Age must be a whole number between 18 and 65.',
       salaryError:
         'Enter a non-negative salary and allowances with up to two decimal places.',
-      success: 'Guard added successfully.',
+      successTitle: 'Guard Added Successfully',
+      success: 'The guard has been added successfully.',
       failure: 'Could not add guard. Please try again.',
       saving: 'Saving…',
       search: 'Search options',
@@ -205,6 +207,8 @@ const en = {
       continue: 'Continue',
       getStarted: 'Get Started',
       skip: 'Skip', // NEW
+      ok: 'OK',
+      cancel: 'Cancel',
     },
 
     auth: {
@@ -527,7 +531,8 @@ const en = {
       notes: 'Notes',
       notesPlaceholder: 'Dates, shift timing, special requirements…',
       checkpointsTitle: 'Patrol checkpoints',
-      checkpointsHint: 'Add the checkpoints the assigned guard must visit, in order.',
+      checkpointsHint:
+        'Add the checkpoints the assigned guard must visit, in order.',
       checkpointPlaceholder: 'e.g. Main Entrance',
       addCheckpoint: 'Add Checkpoint',
       removeCheckpoint: 'Remove checkpoint',
@@ -541,6 +546,13 @@ const en = {
       myRequests: 'MY REQUESTS',
       none: 'No coverage requests yet.',
       required: 'Complete all required fields.',
+      eventNameRequired: 'Event name is required.',
+      stateRequired: 'Please select a state.',
+      districtRequired: 'Please select a district.',
+      cityRequired: 'Please select a city.',
+      siteLocationRequired: 'Site or event location is required.',
+      agencyRequired: 'Please select an agency.',
+      guardsNeededInvalid: 'Enter a number of guards between 1 and 99.',
       sentTitle: 'Request sent',
       sentMessage: 'Your coverage request has been submitted.',
       sendFailed: 'Could not send request.',
@@ -753,7 +765,8 @@ const en = {
       noMatchingLocations: 'No matching locations found.',
       planTitle: 'Plan / Billing',
       checkpointsTitle: 'Patrol checkpoints',
-      checkpointsHint: 'Checkpoints are assigned to this site. The posted guard sees them in Patrol in the same order.',
+      checkpointsHint:
+        'Checkpoints are assigned to this site. The posted guard sees them in Patrol in the same order.',
       checkpointNamePlaceholder: 'Checkpoint name, e.g. Main Gate',
       addCheckpoint: 'Add checkpoint',
       checkpointsLoading: 'Loading checkpoints…',
@@ -763,7 +776,8 @@ const en = {
       checkpointRemoveFailed: 'Checkpoint could not be removed.',
       noCheckpointsYet: 'No checkpoints yet. Add the first patrol stop above.',
       removeCheckpointTitle: 'Remove checkpoint',
-      removeCheckpointConfirm: 'Remove “{{name}}”? The guard will no longer see it in Patrol.',
+      removeCheckpointConfirm:
+        'Remove “{{name}}”? The guard will no longer see it in Patrol.',
     },
     event: {
       title: 'Event Details',
@@ -1104,7 +1118,8 @@ const en = {
       noGuards: 'No guards available.',
       noGuardsHint: 'Add guards to start managing payroll.',
       noRecords: 'No payroll records for this month.',
-      noRecordsHint: 'Select a month with payroll, or generate payroll from a guard.',
+      noRecordsHint:
+        'Select a month with payroll, or generate payroll from a guard.',
       statusPending: 'PENDING',
       statusVerified: 'VERIFIED',
       statusPaid: 'PAID',
@@ -1141,7 +1156,8 @@ const en = {
 
       // Validation & feedback
       invalidAmount: 'Enter a valid non-negative amount.',
-      basicSalaryRequired: 'Basic salary must be configured to generate payroll.',
+      basicSalaryRequired:
+        'Basic salary must be configured to generate payroll.',
       advanceInvalid: 'Enter an advance amount greater than zero.',
       advanceRecorded: 'Advance recorded successfully.',
       advanceFailed: 'Could not record the advance.',
@@ -1152,7 +1168,8 @@ const en = {
       alreadyPaid: 'This payroll has already been paid.',
       guardNotFound: 'Guard not found.',
       confirmPayTitle: 'Mark as Paid',
-      confirmPayMessage: 'Mark {{name}}’s payroll of {{amount}} for {{period}} as paid? This records an external payment and cannot be undone.',
+      confirmPayMessage:
+        'Mark {{name}}’s payroll of {{amount}} for {{period}} as paid? This records an external payment and cannot be undone.',
       confirm: 'Confirm',
       cancel: 'Cancel',
       outstandingAdvance: '{{amount}} outstanding',
@@ -1162,7 +1179,6 @@ const en = {
       guardInfoUnavailable: 'Guard information is unavailable.',
       periodLabel: '{{month}}',
     },
-
   },
 };
 

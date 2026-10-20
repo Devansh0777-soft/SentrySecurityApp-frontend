@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   ScrollView,
   StatusBar,
@@ -26,6 +25,7 @@ import {
   indiaLocationService,
   type IndiaLocationOption,
 } from '../../../services/indiaLocationService';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'AgencyDetails'>;
 
@@ -149,44 +149,63 @@ const AgencyDetailsScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleContinue = async () => {
     if (agencyName.trim().length < 2) {
-      Alert.alert(
+      appAlert.alert(
         t('details.agencyNameRequired'),
         t('details.enterAgencyCompany'),
+        { type: 'error' },
       );
       return;
     }
     if (!businessType) {
-      Alert.alert(t('details.businessRequired'), t('details.selectBusiness'));
+      appAlert.alert(
+        t('details.businessRequired'),
+        t('details.selectBusiness'),
+        { type: 'error' },
+      );
       return;
     }
     if (gstNumber && !/^[A-Z0-9]{15}$/.test(gstNumber.trim().toUpperCase())) {
-      Alert.alert(
+      appAlert.alert(
         'Invalid GST number',
         'Enter a valid 15-character GST number or leave it blank.',
+        { type: 'error' },
       );
       return;
     }
     if (officeAddress.trim().length < 5) {
-      Alert.alert(t('details.officeRequired'), t('details.enterOffice'));
+      appAlert.alert(t('details.officeRequired'), t('details.enterOffice'), {
+        type: 'error',
+      });
       return;
     }
     if (city.trim().length < 2) {
-      Alert.alert(t('details.cityRequired'), t('details.enterYourCity'));
+      appAlert.alert(t('details.cityRequired'), t('details.enterYourCity'), {
+        type: 'error',
+      });
       return;
     }
     if (!state) {
-      Alert.alert(
+      appAlert.alert(
         t('details.stateRequired'),
         t('details.selectStateTerritory'),
+        { type: 'error' },
       );
       return;
     }
     if (!district) {
-      Alert.alert(t('details.districtRequired'), t('details.selectDistrict'));
+      appAlert.alert(
+        t('details.districtRequired'),
+        t('details.selectDistrict'),
+        { type: 'error' },
+      );
       return;
     }
     if (!isValidPincode(pincode)) {
-      Alert.alert(t('details.invalidPincode'), t('details.enterValidPincode'));
+      appAlert.alert(
+        t('details.invalidPincode'),
+        t('details.enterValidPincode'),
+        { type: 'error' },
+      );
       return;
     }
     try {
@@ -209,9 +228,10 @@ const AgencyDetailsScreen: React.FC<Props> = ({ navigation }) => {
       await authService.sendMobileOtp(mobile);
       navigation.navigate('VerifyMobile');
     } catch (error) {
-      Alert.alert(
+      appAlert.alert(
         'Could not continue',
         error instanceof Error ? error.message : 'Please try again.',
+        { type: 'error' },
       );
     } finally {
       setIsSubmitting(false);

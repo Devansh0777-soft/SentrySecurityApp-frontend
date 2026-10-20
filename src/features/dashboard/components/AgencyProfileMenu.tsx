@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
+import { appAlert } from '../../../services/alertService';
 
 /**
  * The menu is an overlay positioned absolutely inside the screen's SafeAreaView
@@ -117,7 +117,9 @@ const AgencyProfileMenu: React.FC<Props> = ({
       await logout();
       onLogout?.();
     } catch {
-      Alert.alert(t('dashboard.logOut'), t('dashboard.tryAgain'));
+      appAlert.alert(t('dashboard.logOut'), t('dashboard.tryAgain'), {
+        type: 'error',
+      });
     } finally {
       logoutPending.current = false;
       setLoggingOut(false);
@@ -172,7 +174,9 @@ const AgencyProfileMenu: React.FC<Props> = ({
           <>
             <View style={styles.identity}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{resolvedIdentity.initials}</Text>
+                <Text style={styles.avatarText}>
+                  {resolvedIdentity.initials}
+                </Text>
                 <View style={styles.online} />
               </View>
               <View style={styles.identityText}>

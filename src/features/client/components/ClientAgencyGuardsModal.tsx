@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -24,6 +23,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont } from '../../../styles/dimensions';
 import { spacing } from '../../../styles/spacing';
 import { typography } from '../../../styles/typography';
+import { appAlert } from '../../../services/alertService';
 
 type Props = {
   visible: boolean;
@@ -85,11 +85,16 @@ export default function ClientAgencyGuardsModal({
         agencyComment.trim(),
       );
       await load();
-      Alert.alert(t('clientAgency.ratingSaved'), t('clientAgency.thankYou'));
+      appAlert.alert(
+        t('clientAgency.ratingSaved'),
+        t('clientAgency.thankYou'),
+        { type: 'success' },
+      );
     } catch (saveError) {
-      Alert.alert(
+      appAlert.alert(
         t('clientAgency.unableToRate'),
         saveError instanceof Error ? saveError.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);
@@ -113,11 +118,16 @@ export default function ClientAgencyGuardsModal({
       );
       setRatingGuard(null);
       await load();
-      Alert.alert(t('clientAgency.ratingSaved'), t('clientAgency.thankYou'));
+      appAlert.alert(
+        t('clientAgency.ratingSaved'),
+        t('clientAgency.thankYou'),
+        { type: 'success' },
+      );
     } catch (saveError) {
-      Alert.alert(
+      appAlert.alert(
         t('clientAgency.unableToRate'),
         saveError instanceof Error ? saveError.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setSaving(false);

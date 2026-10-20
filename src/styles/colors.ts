@@ -29,5 +29,6 @@ export const colors = {
     danger: '#DC2626',
     info: '#2563EB',
     review: '#7C3AED',
+    warning: '#D97706',
   },
 } as const;

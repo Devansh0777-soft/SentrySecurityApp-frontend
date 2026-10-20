@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,6 +32,7 @@ import {
   scaleWidth as w,
 } from '../../../styles/dimensions';
 import ScalePressable from '../../../components/common/ScalePressable';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'AgencyPayrollDetails'>;
 
@@ -63,7 +63,8 @@ const monthLabel = (period: string, locale: string): string => {
 
 const statusMeta = (status: PayrollStatus, labels: Record<string, string>) => {
   if (status === 'paid') return { color: PAID_GREEN, label: labels.paid };
-  if (status === 'verified') return { color: colors.status.info, label: labels.verified };
+  if (status === 'verified')
+    return { color: colors.status.info, label: labels.verified };
   return { color: AMBER, label: labels.pending };
 };
 
@@ -204,7 +205,7 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     const name = details?.guard.full_name ?? '';
     const amount = Number.isNaN(netPreview) ? 0 : netPreview;
     const monthText = monthLabel(period, i18n.language);
-    Alert.alert(
+    appAlert.alert(
       t('payroll.confirmPayTitle'),
       t('payroll.confirmPayMessage', {
         name,
@@ -215,6 +216,7 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         { text: t('payroll.cancel'), style: 'cancel' },
         { text: t('payroll.confirm'), onPress: confirmPay },
       ],
+      { type: 'warning' },
     );
   };
 
@@ -227,7 +229,10 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
       applyDetails(fresh);
       setSuccess(t('payroll.paid'));
     } catch (payErr) {
-      if (payErr instanceof ApiError && payErr.code === 'PAYROLL_ALREADY_PAID') {
+      if (
+        payErr instanceof ApiError &&
+        payErr.code === 'PAYROLL_ALREADY_PAID'
+      ) {
         // Reconcile against the persisted state before reporting failure.
         const fresh = await payrollService.getDetails(guardId, period);
         applyDetails(fresh);
@@ -276,7 +281,10 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
         <StatusBar barStyle="dark-content" />
-        <Header title={t('payroll.detailsTitle')} onBack={() => navigation.goBack()} />
+        <Header
+          title={t('payroll.detailsTitle')}
+          onBack={() => navigation.goBack()}
+        />
         <View style={s.center}>
           <ActivityIndicator color={colors.primary} size="large" />
           <Text style={s.stateText}>{t('payroll.loading')}</Text>
@@ -289,13 +297,24 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
       <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
         <StatusBar barStyle="dark-content" />
-        <Header title={t('payroll.detailsTitle')} onBack={() => navigation.goBack()} />
+        <Header
+          title={t('payroll.detailsTitle')}
+          onBack={() => navigation.goBack()}
+        />
         <View style={s.center}>
           <View style={s.errorIcon}>
-            <Feather name="alert-circle" size={f(28)} color={colors.status.danger} />
+            <Feather
+              name="alert-circle"
+              size={f(28)}
+              color={colors.status.danger}
+            />
           </View>
           <Text style={s.errorText}>{loadError}</Text>
-          <ScalePressable style={s.retry} onPress={load} accessibilityRole="button">
+          <ScalePressable
+            style={s.retry}
+            onPress={load}
+            accessibilityRole="button"
+          >
             <Text style={s.retryText}>{t('payroll.retry')}</Text>
           </ScalePressable>
         </View>
@@ -309,7 +328,10 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
-      <Header title={t('payroll.detailsTitle')} onBack={() => navigation.goBack()} />
+      <Header
+        title={t('payroll.detailsTitle')}
+        onBack={() => navigation.goBack()}
+      />
 
       <KeyboardAvoidingView
         style={s.flex}
@@ -333,16 +355,29 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                   {details.guard.site_name}
                 </Text>
               ) : null}
-              <Text style={s.guardMeta}>{monthLabel(period, i18n.language)}</Text>
+              <Text style={s.guardMeta}>
+                {monthLabel(period, i18n.language)}
+              </Text>
             </View>
-            <View style={[s.statusBadge, { borderColor: meta.color, backgroundColor: `${meta.color}14` }]}>
-              <Text style={[s.statusBadgeText, { color: meta.color }]}>{meta.label}</Text>
+            <View
+              style={[
+                s.statusBadge,
+                { borderColor: meta.color, backgroundColor: `${meta.color}14` },
+              ]}
+            >
+              <Text style={[s.statusBadgeText, { color: meta.color }]}>
+                {meta.label}
+              </Text>
             </View>
           </View>
 
           {error ? (
             <View style={s.alertError}>
-              <Feather name="alert-circle" size={f(16)} color={colors.status.danger} />
+              <Feather
+                name="alert-circle"
+                size={f(16)}
+                color={colors.status.danger}
+              />
               <Text style={s.alertErrorText}>{error}</Text>
             </View>
           ) : null}
@@ -413,7 +448,9 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                 {outstandingAdvances.map(a => (
                   <View key={a.id} style={s.advanceRow}>
                     <View style={s.advanceCopy}>
-                      <Text style={s.advanceAmount}>{formatINR(a.outstanding)}</Text>
+                      <Text style={s.advanceAmount}>
+                        {formatINR(a.outstanding)}
+                      </Text>
                       {a.reason ? (
                         <Text style={s.advanceReason} numberOfLines={1}>
                           {a.reason}
@@ -421,7 +458,9 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                       ) : null}
                     </View>
                     <Text style={s.advanceMeta}>
-                      {t('payroll.outstandingAdvance', { amount: formatINR(a.outstanding) })}
+                      {t('payroll.outstandingAdvance', {
+                        amount: formatINR(a.outstanding),
+                      })}
                     </Text>
                   </View>
                 ))}
@@ -430,7 +469,9 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
             {advanceRecovery > 0 ? (
               <Text style={s.hint}>
-                {t('payroll.advanceRecoveryNote', { amount: formatINR(advanceRecovery) })}
+                {t('payroll.advanceRecoveryNote', {
+                  amount: formatINR(advanceRecovery),
+                })}
               </Text>
             ) : null}
 
@@ -470,7 +511,9 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
               {recording ? (
                 <ActivityIndicator color={colors.primary} />
               ) : (
-                <Text style={s.secondaryButtonText}>{t('payroll.recordAdvance')}</Text>
+                <Text style={s.secondaryButtonText}>
+                  {t('payroll.recordAdvance')}
+                </Text>
               )}
             </ScalePressable>
           </View>
@@ -515,9 +558,16 @@ const AgencyPayrollDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
   );
 };
 
-const Header: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
+const Header: React.FC<{ title: string; onBack: () => void }> = ({
+  title,
+  onBack,
+}) => (
   <View style={s.header}>
-    <ScalePressable style={s.iconButton} onPress={onBack} accessibilityRole="button">
+    <ScalePressable
+      style={s.iconButton}
+      onPress={onBack}
+      accessibilityRole="button"
+    >
       <Feather name="arrow-left" size={f(22)} color={colors.primary} />
     </ScalePressable>
     <Text style={s.headerTitle} numberOfLines={1}>
@@ -551,7 +601,13 @@ const MoneyField: React.FC<{
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.white },
   flex: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: h(12), padding: w(24) },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: h(12),
+    padding: w(24),
+  },
   content: { padding: w(16), paddingBottom: h(32) },
 
   header: {
@@ -679,7 +735,10 @@ const s = StyleSheet.create({
     backgroundColor: colors.white,
     marginBottom: h(14),
   },
-  inputDisabled: { backgroundColor: colors.light.background, color: colors.light.secondaryText },
+  inputDisabled: {
+    backgroundColor: colors.light.background,
+    color: colors.light.secondaryText,
+  },
   hint: {
     color: colors.light.secondaryText,
     fontSize: f(12),
@@ -824,7 +883,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FDECEC',
   },
-  errorText: { color: colors.status.danger, fontSize: f(14), textAlign: 'center' },
+  errorText: {
+    color: colors.status.danger,
+    fontSize: f(14),
+    textAlign: 'center',
+  },
   retry: {
     marginTop: h(6),
     paddingHorizontal: w(20),
@@ -838,5 +901,3 @@ const s = StyleSheet.create({
 });
 
 export default AgencyPayrollDetailsScreen;
-
-

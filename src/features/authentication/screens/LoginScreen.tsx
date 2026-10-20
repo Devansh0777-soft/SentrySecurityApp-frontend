@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -23,6 +22,7 @@ import { colors } from '../../../styles/colors';
 import { scaleFont, scaleHeight, scaleWidth } from '../../../styles/dimensions';
 import { isValidEmail, passwordError } from '../../../utils/validation';
 import { useAuth } from '../context/AuthContext';
+import { appAlert } from '../../../services/alertService';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -36,13 +36,15 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!isValidEmail(identifier.trim())) {
-      Alert.alert(t('auth.invalidDetails'), t('auth.enterLinkedEmail'));
+      appAlert.alert(t('auth.invalidDetails'), t('auth.enterLinkedEmail'), {
+        type: 'error',
+      });
       return;
     }
 
     const error = passwordError(password);
     if (error) {
-      Alert.alert(t('auth.invalidPassword'), error);
+      appAlert.alert(t('auth.invalidPassword'), error, { type: 'error' });
       return;
     }
     try {
@@ -51,9 +53,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       // state; AppNavigator reacts by resetting to the correct role dashboard.
       await login({ identifier: identifier.trim(), password });
     } catch (loginError) {
-      Alert.alert(
+      appAlert.alert(
         t('auth.loginFailed'),
         loginError instanceof Error ? loginError.message : t('auth.tryAgain'),
+        { type: 'error' },
       );
     } finally {
       setIsSubmitting(false);
@@ -68,124 +71,130 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? scaleHeight(8) : 0}
       >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-      <View style={styles.topSpacer}>
-        <LanguageSelector />
-      </View>
-
-      <Image
-        source={require('../../../assets/images/login-shield-logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-
-      <Text style={styles.heading}>{t('auth.welcomeBack')}</Text>
-      <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
-
-      <View style={styles.authTabs}>
-        <TouchableOpacity style={styles.activeTab}>
-          <Text style={styles.activeTabText}>{t('auth.login')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.inactiveTab}
-          onPress={() => navigation.navigate('CreateAccount')}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.inactiveTabText}>{t('auth.createAccount')}</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.topSpacer}>
+            <LanguageSelector />
+          </View>
 
-      <Text style={styles.fieldLabel}>{t('auth.emailAddress')}</Text>
-      <View style={styles.inputWrapper}>
-        <Feather name="user" size={scaleFont(24)} color="#A3A3A3" />
-        <TextInput
-          value={identifier}
-          onChangeText={setIdentifier}
-          style={styles.input}
-          placeholder="abc@example.com"
-          placeholderTextColor="#A3A3A3"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-        />
-      </View>
-
-      <Text style={styles.fieldLabel}>{t('auth.password')}</Text>
-      <View style={styles.inputWrapper}>
-        <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-          placeholder={t('auth.enterPassword')}
-          placeholderTextColor="#A3A3A3"
-          secureTextEntry={!passwordVisible}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity
-          style={styles.eyeButton}
-          onPress={() => setPasswordVisible(current => !current)}
-          accessibilityLabel={
-            passwordVisible ? t('auth.hidePassword') : t('auth.showPassword')
-          }
-        >
-          <Feather
-            name={passwordVisible ? 'eye-off' : 'eye'}
-            size={scaleFont(24)}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.forgotButton}
-        onPress={() => navigation.navigate('ForgotPassword')}
-      >
-        <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.loginButton, isSubmitting && styles.disabledButton]}
-        onPress={handleLogin}
-        disabled={isSubmitting}
-      >
-        <Text style={styles.loginButtonText}>
-          {isSubmitting ? t('auth.loggingIn') : t('auth.login')}
-        </Text>
-      </TouchableOpacity>
-
-      <Text style={styles.continueText}>{t('auth.orContinueWith')}</Text>
-
-      <View style={styles.socialRow}>
-        <TouchableOpacity style={styles.socialButton}>
           <Image
-            source={require('../../../assets/images/google-logo.png')}
-            style={styles.googleLogo}
+            source={require('../../../assets/images/login-shield-logo.png')}
+            style={styles.logo}
             resizeMode="contain"
           />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <Image
-            source={require('../../../assets/images/apple-logo.png')}
-            style={styles.appleLogo}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <Feather name="phone" size={scaleFont(49)} color="#000000" />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.signupRow}>
-        <Text style={styles.signupPrompt}>{t('auth.noAccount')}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('CreateAccount')}>
-          <Text style={styles.signupLink}> {t('auth.signUp')}</Text>
-        </TouchableOpacity>
-      </View>
-      </ScrollView>
+          <Text style={styles.heading}>{t('auth.welcomeBack')}</Text>
+          <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
+
+          <View style={styles.authTabs}>
+            <TouchableOpacity style={styles.activeTab}>
+              <Text style={styles.activeTabText}>{t('auth.login')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.inactiveTab}
+              onPress={() => navigation.navigate('CreateAccount')}
+            >
+              <Text style={styles.inactiveTabText}>
+                {t('auth.createAccount')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.fieldLabel}>{t('auth.emailAddress')}</Text>
+          <View style={styles.inputWrapper}>
+            <Feather name="user" size={scaleFont(24)} color="#A3A3A3" />
+            <TextInput
+              value={identifier}
+              onChangeText={setIdentifier}
+              style={styles.input}
+              placeholder="abc@example.com"
+              placeholderTextColor="#A3A3A3"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+          </View>
+
+          <Text style={styles.fieldLabel}>{t('auth.password')}</Text>
+          <View style={styles.inputWrapper}>
+            <Feather name="lock" size={scaleFont(24)} color="#A3A3A3" />
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              style={styles.input}
+              placeholder={t('auth.enterPassword')}
+              placeholderTextColor="#A3A3A3"
+              secureTextEntry={!passwordVisible}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setPasswordVisible(current => !current)}
+              accessibilityLabel={
+                passwordVisible
+                  ? t('auth.hidePassword')
+                  : t('auth.showPassword')
+              }
+            >
+              <Feather
+                name={passwordVisible ? 'eye-off' : 'eye'}
+                size={scaleFont(24)}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.forgotButton}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
+            <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.loginButton, isSubmitting && styles.disabledButton]}
+            onPress={handleLogin}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.loginButtonText}>
+              {isSubmitting ? t('auth.loggingIn') : t('auth.login')}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.continueText}>{t('auth.orContinueWith')}</Text>
+
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialButton}>
+              <Image
+                source={require('../../../assets/images/google-logo.png')}
+                style={styles.googleLogo}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <Image
+                source={require('../../../assets/images/apple-logo.png')}
+                style={styles.appleLogo}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <Feather name="phone" size={scaleFont(49)} color="#000000" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.signupRow}>
+            <Text style={styles.signupPrompt}>{t('auth.noAccount')}</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CreateAccount')}
+            >
+              <Text style={styles.signupLink}> {t('auth.signUp')}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
